@@ -1,11 +1,15 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { Music, Loader2 } from 'lucide-react';
 
 type SectionType = 'verse' | 'chorus' | 'bridge' | 'hook' | 'outro';
 
@@ -17,24 +21,53 @@ type Section = {
 
 interface NoteEditorProps {
   noteId?: string;
+  initialTitle?: string;
+  initialContent?: string;
   className?: string;
+  onSave?: (title: string, content: string, audioUrl?: string) => Promise<void>;
 }
 
-export function NoteEditor({ noteId, className }: NoteEditorProps) {
-  const [title, setTitle] = useState(noteId ? 'Mon titre de chanson' : '');
+export function NoteEditor({ noteId, initialTitle = '', initialContent = '', className, onSave }: NoteEditorProps) {
+  const [title, setTitle] = useState(initialTitle);
   const [currentContent, setCurrentContent] = useState('');
-  const [sections, setSections] = useState<Section[]>(noteId ? [
-    { id: '1', type: 'verse', content: 'Premier couplet...' },
-    { id: '2', type: 'chorus', content: 'Refrain...' },
-    { id: '3', type: 'verse', content: 'Deuxième couplet...' }
-  ] : []);
+  const [sections, setSections] = useState<Section[]>([]);
   const [activeTab, setActiveTab] = useState<'write' | 'record'>('write');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [sectionType, setSectionType] = useState<SectionType>('verse');
+  const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
 
-  // For demo purposes only - would come from props in real app
-  const demoAudioUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3";
-  
+  useEffect(() => {
+    const fetchNote = async () => {
+      if (noteId) {
+        try {
+          const { data, error } = await supabase
+            .from('notes')
+            .select('*')
+            .eq('id', noteId)
+            .single();
+
+          if (error) throw error;
+
+          if (data) {
+            setTitle(data.title);
+            setCurrentContent(data.content || '');
+            
+            if (data.audio_url) {
+              setAudioUrl(data.audio_url);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching note:', error);
+          toast.error('Erreur lors du chargement de la note');
+        }
+      }
+    };
+
+    fetchNote();
+  }, [noteId]);
+
   const handleSaveSection = () => {
     if (!currentContent.trim()) return;
     
@@ -48,9 +81,95 @@ export function NoteEditor({ noteId, className }: NoteEditorProps) {
     setCurrentContent('');
   };
 
-  const handleRecordingComplete = (blob: Blob) => {
+  const handleRecordingComplete = async (blob: Blob) => {
     setAudioBlob(blob);
-    // Here you would typically upload this blob or save it
+  };
+
+  const handleSave = async () => {
+    if (!title.trim()) {
+      toast.error('Veuillez ajouter un titre à votre note');
+      return;
+    }
+
+    if (!user) {
+      toast.error('Vous devez être connecté pour enregistrer une note');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      let uploadedAudioUrl = audioUrl;
+
+      // Si un nouveau fichier audio a été enregistré, on l'upload
+      if (audioBlob) {
+        const fileExt = 'webm';
+        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+        const filePath = `${fileName}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('audio-files')
+          .upload(filePath, audioBlob, {
+            cacheControl: '3600',
+            upsert: false
+          });
+          
+        if (uploadError) throw uploadError;
+        
+        // Récupérer l'URL publique
+        const { data: { publicUrl } } = supabase.storage
+          .from('audio-files')
+          .getPublicUrl(filePath);
+          
+        uploadedAudioUrl = publicUrl;
+      }
+
+      // Compiler le contenu de la note (inclure les sections)
+      const fullContent = sections.map(section => 
+        `[${section.type.toUpperCase()}]\n${section.content}`
+      ).join('\n\n') || currentContent;
+
+      // Utiliser la fonction de sauvegarde passée en prop ou la sauvegarde interne
+      if (onSave) {
+        await onSave(title, fullContent, uploadedAudioUrl || undefined);
+      } else {
+        if (noteId) {
+          // Mettre à jour une note existante
+          const { error } = await supabase
+            .from('notes')
+            .update({
+              title,
+              content: fullContent,
+              audio_url: uploadedAudioUrl,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', noteId);
+
+          if (error) throw error;
+          
+          toast.success('Note mise à jour avec succès');
+        } else {
+          // Créer une nouvelle note
+          const { error } = await supabase
+            .from('notes')
+            .insert({
+              title,
+              content: fullContent,
+              audio_url: uploadedAudioUrl,
+              user_id: user.id
+            });
+
+          if (error) throw error;
+          
+          toast.success('Note créée avec succès');
+        }
+      }
+    } catch (error: any) {
+      console.error('Error saving note:', error);
+      toast.error(`Erreur lors de l'enregistrement: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const sectionLabels: Record<SectionType, string> = {
@@ -83,10 +202,10 @@ export function NoteEditor({ noteId, className }: NoteEditorProps) {
       </div>
 
       {/* Audio player */}
-      {(noteId || audioBlob) && (
+      {(audioUrl || audioBlob) && (
         <div className="mb-4">
           <AudioPlayer 
-            audioSrc={audioBlob ? URL.createObjectURL(audioBlob) : demoAudioUrl}
+            audioSrc={audioBlob ? URL.createObjectURL(audioBlob) : audioUrl || ''}
           />
         </div>
       )}
@@ -142,9 +261,19 @@ export function NoteEditor({ noteId, className }: NoteEditorProps) {
             className="flex-1 resize-none p-3 rounded-md border border-input bg-background min-h-[150px] focus:outline-none focus:ring-1 focus:ring-ring"
           />
           
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-2">
             <Button onClick={handleSaveSection} disabled={!currentContent.trim()}>
               Ajouter la section
+            </Button>
+            <Button onClick={handleSave} disabled={!title.trim() || saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sauvegarde...
+                </>
+              ) : (
+                'Enregistrer la note'
+              )}
             </Button>
           </div>
         </TabsContent>
@@ -154,6 +283,20 @@ export function NoteEditor({ noteId, className }: NoteEditorProps) {
             onRecordingComplete={handleRecordingComplete}
             className="mt-4 border rounded-md"
           />
+          <Button
+            onClick={handleSave}
+            disabled={!title.trim() || (!audioBlob && !audioUrl) || saving}
+            className="mt-4 self-end"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sauvegarde...
+              </>
+            ) : (
+              'Enregistrer la note'
+            )}
+          </Button>
         </TabsContent>
       </Tabs>
     </div>

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import ThemeSwitcher from '@/components/ui/ThemeSwitcher';
 import { Button } from '@/components/ui/button';
@@ -7,17 +7,89 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { Settings as SettingsIcon, User, Bell, HardDrive, Trash } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Settings = () => {
-  const [username, setUsername] = useState('User');
-  const [email, setEmail] = useState('user@example.com');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [offlineModeEnabled, setOfflineModeEnabled] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
-  const handleSaveProfile = () => {
-    // Here we would save the profile info to the backend
-    toast.success('Profil mis à jour avec succès!');
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user) return;
+
+      try {
+        // Récupérer le profil utilisateur
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          throw profileError;
+        }
+
+        if (profile) {
+          setUsername(profile.username || user.email?.split('@')[0] || '');
+        } else {
+          // Si le profil n'existe pas encore, utiliser l'email
+          setUsername(user.email?.split('@')[0] || '');
+        }
+
+        // Définir l'email de l'utilisateur
+        setEmail(user.email || '');
+
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        toast.error('Erreur lors du chargement du profil');
+      }
+    };
+
+    fetchUserProfile();
+  }, [user]);
+
+  const handleSaveProfile = async () => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour mettre à jour votre profil');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user.id,
+          username: username,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
+      toast.success('Profil mis à jour avec succès!');
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      toast.error(`Erreur lors de la mise à jour du profil: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    // Dans une vraie implémentation, vous pourriez ajouter une confirmation
+    toast.error('Cette fonctionnalité est désactivée pour le moment');
+  };
+
+  const handleDeleteAllNotes = async () => {
+    // Dans une vraie implémentation, vous pourriez ajouter une confirmation
+    toast.error('Cette fonctionnalité est désactivée pour le moment');
   };
 
   return (
@@ -62,11 +134,15 @@ const Settings = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled
                 />
+                <p className="text-sm text-muted-foreground mt-1">
+                  L'email ne peut pas être modifié
+                </p>
               </div>
               
-              <Button onClick={handleSaveProfile}>
-                Enregistrer
+              <Button onClick={handleSaveProfile} disabled={loading}>
+                {loading ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
             </div>
           </section>
@@ -150,10 +226,10 @@ const Settings = () => {
               </p>
               
               <div className="flex flex-wrap gap-2">
-                <Button variant="destructive">
+                <Button variant="destructive" onClick={handleDeleteAllNotes}>
                   Supprimer toutes les notes
                 </Button>
-                <Button variant="destructive">
+                <Button variant="destructive" onClick={handleDeleteAccount}>
                   Supprimer le compte
                 </Button>
               </div>

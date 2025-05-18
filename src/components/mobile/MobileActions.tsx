@@ -7,21 +7,82 @@ import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
 import { BeatUploader } from '@/components/audio/BeatUploader';
 import { PlusCircle, BookmarkIcon, Music, Mic, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export function MobileActions() {
   const isMobile = useIsMobile();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'note' | 'beat' | 'record'>('note');
+  const [isUploaderOpen, setIsUploaderOpen] = useState(false);
+  const { user } = useAuth();
   
   // Only show on mobile and on specific pages
-  if (!isMobile || !['/notes', '/beats'].includes(location.pathname)) {
+  if (!isMobile || !['/notes', '/beats', '/'].includes(location.pathname)) {
     return null;
   }
 
-  const handleActionComplete = () => {
+  const handleSaveNote = async (title: string, content: string, audioUrl?: string) => {
+    if (!user) {
+      toast.error('Vous devez être connecté pour sauvegarder une note');
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .insert({
+          title,
+          content,
+          audio_url: audioUrl,
+          user_id: user.id
+        });
+        
+      if (error) throw error;
+      
+      toast.success('Note créée avec succès');
+      setIsOpen(false);
+      
+      // Rediriger vers la page des notes si on n'y est pas déjà
+      if (location.pathname !== '/notes') {
+        navigate('/notes');
+      } else {
+        // Forcer un rechargement pour voir la nouvelle note
+        window.location.reload();
+      }
+    } catch (error: any) {
+      console.error('Error saving note:', error);
+      toast.error(`Erreur lors de l'enregistrement: ${error.message}`);
+    }
+  };
+
+  const handleUploadSuccess = (fileUrl: string, fileName: string) => {
+    setIsUploaderOpen(false);
     setIsOpen(false);
+    
+    // Rediriger vers la page des beats si on n'y est pas déjà
+    if (location.pathname !== '/beats') {
+      navigate('/beats');
+    } else {
+      // Forcer un rechargement pour voir le nouveau beat
+      window.location.reload();
+    }
+  };
+
+  const handleFileBeatUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      if (!file.type.startsWith('audio/')) {
+        toast.error('Veuillez sélectionner un fichier audio');
+        return;
+      }
+      
+      setIsUploaderOpen(true);
+    }
   };
 
   return (
@@ -69,7 +130,7 @@ export function MobileActions() {
           
           <div className="p-4 max-h-[70vh] overflow-y-auto">
             {activeTab === 'note' && (
-              <NoteEditor />
+              <NoteEditor onSave={handleSaveNote} />
             )}
             {activeTab === 'beat' && (
               <div className="flex items-center justify-center h-32">
@@ -85,12 +146,19 @@ export function MobileActions() {
                     type="file" 
                     accept="audio/*"
                     className="hidden"
+                    onChange={handleFileBeatUpload}
                   />
                 </Button>
               </div>
             )}
             {activeTab === 'record' && (
-              <VoiceRecorder className="border rounded-md p-4" />
+              <VoiceRecorder 
+                onRecordingComplete={(blob) => {
+                  toast.success('Enregistrement terminé! Vous pouvez maintenant créer une note avec.');
+                  setActiveTab('note');
+                }}
+                className="border rounded-md p-4" 
+              />
             )}
           </div>
           
@@ -101,6 +169,14 @@ export function MobileActions() {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      {isUploaderOpen && (
+        <BeatUploader
+          isOpen={isUploaderOpen}
+          onClose={() => setIsUploaderOpen(false)}
+          onUploadSuccess={handleUploadSuccess}
+        />
+      )}
     </>
   );
 }

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Music, Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BeatUploaderProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export function BeatUploader({ isOpen, onClose, onUploadSuccess }: BeatUploaderP
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [title, setTitle] = useState('');
+  const { user } = useAuth();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -39,30 +41,58 @@ export function BeatUploader({ isOpen, onClose, onUploadSuccess }: BeatUploaderP
   };
 
   const handleSubmit = async () => {
-    if (!file) {
-      toast.error('Veuillez sélectionner un fichier audio');
+    if (!file || !user) {
+      toast.error('Veuillez sélectionner un fichier audio ou vous connecter');
       return;
     }
 
     setUploading(true);
 
     try {
-      // In a real implementation, we would upload to Supabase storage
-      // For demo purposes, we're using a placeholder URL
-      const demoUrl = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+      // Créer un nom de fichier unique avec le userId pour le stockage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
       
-      // Simulate upload delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Upload du fichier dans le bucket
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('audio-files')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
       
-      // Call success handler with the demo URL
-      onUploadSuccess(demoUrl, title || file.name);
+      if (uploadError) throw uploadError;
       
-      // Reset form
+      // Récupérer l'URL publique
+      const { data: { publicUrl } } = supabase.storage
+        .from('audio-files')
+        .getPublicUrl(filePath);
+      
+      // Ajouter le beat dans la base de données
+      const { error: insertError } = await supabase
+        .from('beats')
+        .insert({
+          title: title || file.name,
+          audio_url: publicUrl,
+          user_id: user.id
+        });
+      
+      if (insertError) throw insertError;
+      
+      // Appeler le callback de succès
+      onUploadSuccess(publicUrl, title || file.name);
+      
+      toast.success('Beat ajouté avec succès');
+      
+      // Réinitialiser le formulaire
       setFile(null);
       setTitle('');
-    } catch (error) {
+      onClose();
+      
+    } catch (error: any) {
       console.error('Upload error:', error);
-      toast.error('Erreur lors du téléchargement du fichier');
+      toast.error(`Erreur lors du téléchargement: ${error.message}`);
     } finally {
       setUploading(false);
     }
