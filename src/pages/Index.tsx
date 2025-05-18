@@ -2,7 +2,7 @@
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Music, BookmarkIcon, Record } from 'lucide-react';
+import { Music, BookmarkIcon, CirclePlay } from 'lucide-react';
 
 const Index = () => {
   return (
@@ -45,7 +45,7 @@ const Index = () => {
             description="Écoutez des beats tout en écrivant pour rester dans le rythme et l'ambiance."
           />
           <FeatureCard 
-            icon={<Record className="h-10 w-10 text-ibh-purple" />}
+            icon={<CirclePlay className="h-10 w-10 text-ibh-purple" />}
             title="Enregistrement Vocal"
             description="Enregistrez votre voix directement dans l'application pour tester vos flows."
           />

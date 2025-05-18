@@ -1,7 +1,7 @@
 
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Record, Stop } from "lucide-react";
+import { Mic, MicOff, CirclePlay, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type VoiceRecorderProps = {
@@ -101,12 +101,12 @@ export function VoiceRecorder({ onRecordingComplete, className }: VoiceRecorderP
         >
           {isRecording ? (
             <>
-              <Stop size={16} />
+              <Square size={16} />
               Arrêter
             </>
           ) : (
             <>
-              <Record size={16} />
+              <CirclePlay size={16} />
               Enregistrer
             </>
           )}
