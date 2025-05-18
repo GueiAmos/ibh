@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
 import { BookmarkIcon, Music } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export type Note = {
   id: string;
@@ -23,10 +24,12 @@ type NoteItemProps = {
   note: Note;
   onClick: (note: Note) => void;
   isSelected?: boolean;
+  index: number;
 };
 
-export function NoteItem({ note, onClick, isSelected = false }: NoteItemProps) {
+export function NoteItem({ note, onClick, isSelected = false, index }: NoteItemProps) {
   const [isFavorite, setIsFavorite] = useState(note.favorite);
+  const [isHovered, setIsHovered] = useState(false);
   
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -39,41 +42,57 @@ export function NoteItem({ note, onClick, isSelected = false }: NoteItemProps) {
     locale: fr,
   });
 
+  // Récupération du contenu textuel pour la prévisualisation
+  const previewContent = note.content.replace(/(<([^>]+)>)/gi, "").substring(0, 120);
+
   return (
-    <div
-      onClick={() => onClick(note)}
-      className={cn(
-        'p-4 rounded-lg transition-all cursor-pointer border',
-        'hover:border-ibh-purple/50',
-        isSelected 
-          ? 'border-ibh-purple bg-ibh-purple/5 dark:bg-ibh-purple/10' 
-          : 'border-border bg-card'
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
     >
-      <div className="flex justify-between items-start mb-2">
-        <h3 className="font-medium text-lg truncate pr-2">{note.title}</h3>
-        <div className="flex gap-1.5">
-          {note.audioAttached && (
-            <Music size={18} className="text-ibh-blue" />
-          )}
-          <BookmarkIcon 
-            size={18} 
-            className={cn(
-              "cursor-pointer transition-colors",
-              isFavorite 
-                ? "fill-ibh-purple text-ibh-purple" 
-                : "text-muted-foreground hover:text-foreground"
+      <div
+        onClick={() => onClick(note)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className={cn(
+          'p-5 rounded-xl transition-all cursor-pointer border h-full',
+          'hover:shadow-md hover:border-primary/30',
+          isSelected 
+            ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-sm' 
+            : 'border-border bg-card',
+          isHovered ? 'transform -translate-y-1' : ''
+        )}
+      >
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-medium text-lg truncate pr-2">{note.title || "Note sans titre"}</h3>
+          <div className="flex gap-1.5">
+            {note.audioAttached && (
+              <div className="tooltip" data-tip="Audio attaché">
+                <Music size={18} className="text-ibh-blue" />
+              </div>
             )}
-            onClick={handleFavoriteClick}
-          />
+            <BookmarkIcon 
+              size={18} 
+              className={cn(
+                "cursor-pointer transition-colors",
+                isFavorite 
+                  ? "fill-primary text-primary" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={handleFavoriteClick}
+            />
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground line-clamp-3 mb-3 min-h-[3rem]">
+          {previewContent}
+          {previewContent.length >= 120 && "..."}
+        </p>
+        <div className="text-xs text-muted-foreground flex items-center justify-between">
+          <span>Modifié {timeAgo}</span>
+          <span className="text-primary/80">Cliquer pour éditer</span>
         </div>
       </div>
-      <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-        {note.content}
-      </p>
-      <div className="text-xs text-muted-foreground">
-        Modifié {timeAgo}
-      </div>
-    </div>
+    </motion.div>
   );
-}
+};

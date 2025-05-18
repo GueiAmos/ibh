@@ -2,12 +2,14 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { Music, Plus } from 'lucide-react';
+import { Music, Plus, Loader2, Search, Upload } from 'lucide-react';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import { BeatUploader } from '@/components/audio/BeatUploader';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/ui/input';
+import { motion } from 'framer-motion';
 
 interface Beat {
   id: string;
@@ -20,6 +22,7 @@ const Beats = () => {
   const [beats, setBeats] = useState<Beat[]>([]);
   const [isUploaderOpen, setIsUploaderOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -66,45 +69,99 @@ const Beats = () => {
     fetchBeats();
   };
 
+  // Filtrer les beats selon la recherche
+  const filteredBeats = beats.filter(beat => 
+    beat.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <MainLayout>
-      <div className="ibh-container py-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center">
-            <Music className="mr-2 h-6 w-6" />
-            Mes Beats
-          </h1>
-          <Button onClick={() => setIsUploaderOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+      <div className="ibh-container py-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center">
+              <Music className="mr-2 h-6 w-6 text-primary" />
+              Mes Beats
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Votre collection personnelle d'instrumentaux
+            </p>
+          </div>
+          <Button onClick={() => setIsUploaderOpen(true)} className="rounded-lg shadow-sm">
+            <Upload className="mr-2 h-4 w-4" />
             Ajouter un beat
           </Button>
         </div>
 
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un beat..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 bg-background/50"
+          />
+        </div>
+
         {loading ? (
-          <div className="flex justify-center my-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ibh-purple"></div>
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-muted-foreground">Chargement de vos beats...</p>
           </div>
-        ) : beats.length === 0 ? (
-          <div className="text-center py-12">
-            <Music className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-            <h3 className="mt-4 text-lg font-medium">Aucun beat trouvé</h3>
-            <p className="text-muted-foreground mt-2">
-              Commencez par ajouter un nouveau beat à votre collection.
+        ) : filteredBeats.length === 0 ? (
+          <div className="glass-panel text-center py-20 rounded-xl flex flex-col items-center">
+            <Music className="mx-auto h-16 w-16 text-muted-foreground opacity-30 mb-4" />
+            <h3 className="text-xl font-medium">
+              {searchQuery ? 'Aucun beat trouvé' : 'Votre bibliothèque est vide'}
+            </h3>
+            <p className="text-muted-foreground mt-2 mb-6 max-w-md mx-auto">
+              {searchQuery 
+                ? 'Essayez avec des termes différents' 
+                : 'Commencez par ajouter un nouveau beat à votre collection'}
             </p>
-            <Button className="mt-4" onClick={() => setIsUploaderOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Ajouter un beat
-            </Button>
+            {!searchQuery && (
+              <Button onClick={() => setIsUploaderOpen(true)} className="rounded-lg shadow-sm">
+                <Upload className="mr-2 h-4 w-4" />
+                Importer mon premier beat
+              </Button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {beats.map((beat) => (
-              <div key={beat.id} className="glass-panel p-4 rounded-lg">
-                <h3 className="font-medium text-lg mb-2 truncate">{beat.title}</h3>
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            variants={container}
+            initial="hidden"
+            animate="show"
+          >
+            {filteredBeats.map((beat, index) => (
+              <motion.div 
+                key={beat.id} 
+                variants={item}
+                className="glass-panel p-5 rounded-xl hover:shadow-md transition-all"
+              >
+                <h3 className="font-medium text-lg mb-3 truncate">{beat.title}</h3>
                 <AudioPlayer audioSrc={beat.audio_url} />
-              </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Ajouté le {new Date(beat.created_at).toLocaleDateString()}
+                </p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         )}
 
         <BeatUploader 

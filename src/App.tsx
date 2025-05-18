@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { AnimatePresence } from "framer-motion";
 
 const queryClient = new QueryClient();
 
@@ -35,24 +36,26 @@ const App = () => {
       <AuthProvider>
         <TooltipProvider>
           <Toaster />
-          <Sonner />
+          <Sonner closeButton position="bottom-center" />
           <BrowserRouter>
-            <Routes>
-              {/* Route publique */}
-              <Route path="/auth" element={<Auth />} />
-              
-              {/* Routes protégées */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/" element={<Index />} />
-                <Route path="/notes" element={<Notes />} />
-                <Route path="/beats" element={<Beats />} />
-                <Route path="/folders" element={<Folders />} />
-                <Route path="/settings" element={<Settings />} />
-              </Route>
-              
-              {/* Fallback */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AnimatePresence mode="wait">
+              <Routes>
+                {/* Route publique */}
+                <Route path="/auth" element={<Auth />} />
+                
+                {/* Routes protégées */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/notes" element={<Notes />} />
+                  <Route path="/beats" element={<Beats />} />
+                  <Route path="/folders" element={<Folders />} />
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
+                
+                {/* Fallback */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AnimatePresence>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

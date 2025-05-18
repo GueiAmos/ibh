@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { BookText, Plus, Search } from 'lucide-react';
+import { BookText, Plus, Search, ArrowLeft, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { NotesGrid } from '@/components/notes/NotesGrid';
 import { NoteEditor } from '@/components/notes/NoteEditor';
@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Note } from '@/components/notes/NoteItem';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Notes = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -146,74 +147,107 @@ const Notes = () => {
     }
   };
 
+  const pageVariants = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 }
+  };
+
   return (
     <MainLayout>
-      <div className="ibh-container py-4">
-        {isEditorOpen ? (
-          <div>
-            <Button variant="outline" onClick={handleCloseEditor} className="mb-4">
-              ← Retour aux notes
-            </Button>
-            <NoteEditor 
-              noteId={selectedNote?.id} 
-              initialTitle={selectedNote?.title}
-              initialContent={selectedNote?.content}
-              onSave={handleSaveNote}
-            />
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold flex items-center">
-                <BookText className="mr-2 h-6 w-6" />
-                Mes Notes
-              </h1>
-              <Button onClick={handleNewNote}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nouvelle note
+      <div className="ibh-container py-6">
+        <AnimatePresence mode="wait">
+          {isEditorOpen ? (
+            <motion.div
+              key="editor"
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              variants={pageVariants}
+            >
+              <Button 
+                variant="ghost" 
+                onClick={handleCloseEditor} 
+                className="mb-4 group"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
+                Retour aux notes
               </Button>
-            </div>
-            
-            <div className="relative mb-6">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher dans vos notes..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="pl-8"
-              />
-            </div>
-            
-            {loading ? (
-              <div className="flex justify-center my-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ibh-purple"></div>
+              <div className="glass-panel p-4 md:p-6 rounded-xl">
+                <NoteEditor 
+                  noteId={selectedNote?.id} 
+                  initialTitle={selectedNote?.title}
+                  initialContent={selectedNote?.content}
+                  onSave={handleSaveNote}
+                />
               </div>
-            ) : filteredNotes.length === 0 ? (
-              <div className="text-center py-12">
-                <BookText className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-medium">
-                  {searchTerm.trim() !== '' ? 'Aucun résultat trouvé' : 'Aucune note trouvée'}
-                </h3>
-                <p className="text-muted-foreground mt-2">
-                  {searchTerm.trim() !== '' 
-                    ? 'Essayez avec des termes différents'
-                    : 'Commencez par créer une nouvelle note'}
-                </p>
-                {searchTerm.trim() === '' && (
-                  <Button className="mt-4" onClick={handleNewNote}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Créer une note
-                  </Button>
-                )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="notes"
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              variants={pageVariants}
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold flex items-center">
+                    <BookText className="mr-2 h-6 w-6 text-primary" />
+                    Mes Notes
+                  </h1>
+                  <p className="text-muted-foreground mt-1">
+                    Organisez et rédigez vos textes
+                  </p>
+                </div>
+                <Button onClick={handleNewNote} className="rounded-lg shadow-sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nouvelle note
+                </Button>
               </div>
-            ) : (
-              <NotesGrid 
-                notes={filteredNotes} 
-                onNoteSelect={handleNoteSelect}
-              />
-            )}
-          </>
-        )}
+              
+              <div className="relative mb-6">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher dans vos notes..."
+                  value={searchTerm}
+                  onChange={handleSearch}
+                  className="pl-9 bg-background/50"
+                />
+              </div>
+              
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                  <p className="text-muted-foreground">Chargement de vos notes...</p>
+                </div>
+              ) : filteredNotes.length === 0 ? (
+                <div className="glass-panel text-center py-20 rounded-xl flex flex-col items-center">
+                  <BookText className="mx-auto h-16 w-16 text-muted-foreground opacity-30 mb-4" />
+                  <h3 className="text-xl font-medium">
+                    {searchTerm.trim() !== '' ? 'Aucun résultat trouvé' : 'Aucune note trouvée'}
+                  </h3>
+                  <p className="text-muted-foreground mt-2 mb-6 max-w-md mx-auto">
+                    {searchTerm.trim() !== '' 
+                      ? 'Essayez avec des termes différents'
+                      : 'Commencez par créer une nouvelle note pour donner vie à vos idées'}
+                  </p>
+                  {searchTerm.trim() === '' && (
+                    <Button onClick={handleNewNote} className="rounded-lg shadow-sm">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Créer ma première note
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                <NotesGrid 
+                  notes={filteredNotes} 
+                  onNoteSelect={handleNoteSelect}
+                />
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </MainLayout>
   );
