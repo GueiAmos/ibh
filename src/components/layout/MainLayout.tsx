@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import ThemeSwitcher from '../ui/ThemeSwitcher';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import { MobileActions } from '@/components/mobile/MobileActions';
 
 type MainLayoutProps = {
   children: React.ReactNode;
@@ -35,6 +36,7 @@ export function MainLayout({ children }: MainLayoutProps) {
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
         <main className="flex-1 overflow-y-auto">
           {children}
+          <MobileActions />
         </main>
       </div>
     </div>

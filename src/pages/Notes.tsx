@@ -5,7 +5,10 @@ import { NoteEditor } from '@/components/notes/NoteEditor';
 import { NotesGrid } from '@/components/notes/NotesGrid'; 
 import { Note } from '@/components/notes/NoteItem';
 import { Button } from '@/components/ui/button';
+import { MobileActions } from '@/components/mobile/MobileActions';
 import { BookmarkPlus, Search } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerClose } from '@/components/ui/drawer';
 
 // Mock data
 const mockNotes: Note[] = [
@@ -54,6 +57,8 @@ const Notes = () => {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isMobileEditorOpen, setIsMobileEditorOpen] = useState(false);
+  const isMobile = useIsMobile();
   
   // Filter notes based on search query
   const filteredNotes = notes.filter(note => 
@@ -64,11 +69,19 @@ const Notes = () => {
   const handleSelectNote = (note: Note) => {
     setSelectedNote(note);
     setIsCreating(false);
+    
+    if (isMobile) {
+      setIsMobileEditorOpen(true);
+    }
   };
 
   const handleCreateNew = () => {
     setSelectedNote(null);
     setIsCreating(true);
+    
+    if (isMobile) {
+      setIsMobileEditorOpen(true);
+    }
   };
 
   return (
@@ -104,7 +117,7 @@ const Notes = () => {
           </div>
         </div>
         
-        {/* Editor area */}
+        {/* Editor area - desktop */}
         <div className="hidden md:flex flex-1 overflow-hidden">
           <div className="flex-1 p-6 overflow-y-auto">
             {selectedNote ? (
@@ -127,6 +140,31 @@ const Notes = () => {
           </div>
         </div>
       </div>
+      
+      {/* Mobile editor drawer */}
+      {isMobile && (
+        <>
+          <MobileActions />
+          
+          <Drawer open={isMobileEditorOpen} onOpenChange={setIsMobileEditorOpen}>
+            <DrawerContent className="h-[85vh] max-h-[85vh]">
+              <DrawerHeader>
+                <DrawerTitle>
+                  {selectedNote ? selectedNote.title : 'Nouvelle note'}
+                </DrawerTitle>
+                <DrawerClose />
+              </DrawerHeader>
+              <div className="px-4 pb-4 overflow-y-auto h-full">
+                {selectedNote ? (
+                  <NoteEditor noteId={selectedNote.id} />
+                ) : (
+                  <NoteEditor />
+                )}
+              </div>
+            </DrawerContent>
+          </Drawer>
+        </>
+      )}
     </MainLayout>
   );
 };

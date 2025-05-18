@@ -7,6 +7,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import Notes from "./pages/Notes";
+import Beats from "./pages/Beats";
+import Folders from "./pages/Folders";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +36,9 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/notes" element={<Notes />} />
+            <Route path="/beats" element={<Beats />} />
+            <Route path="/folders" element={<Folders />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
