@@ -16,8 +16,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Sidebar for mobile */}
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+      {/* Sidebar for mobile - only shown on mobile devices */}
+      {isMobile && <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />}
       
       {/* Main content with top navbar for desktop */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
