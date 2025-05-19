@@ -3,6 +3,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Mic, MicOff, CirclePlay, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 type VoiceRecorderProps = {
   onRecordingComplete?: (audioBlob: Blob) => void;
@@ -21,24 +22,32 @@ export function VoiceRecorder({ onRecordingComplete, className }: VoiceRecorderP
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        if (audioChunksRef.current.length === 0) {
+          toast.error("Aucun audio n'a été enregistré");
+          return;
+        }
+        
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
+        
         if (onRecordingComplete) {
           onRecordingComplete(audioBlob);
         }
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(100); // Collect data in 100ms chunks
       setIsRecording(true);
       setRecordingTime(0);
       
@@ -49,7 +58,7 @@ export function VoiceRecorder({ onRecordingComplete, className }: VoiceRecorderP
 
     } catch (error) {
       console.error("Error accessing microphone:", error);
-      // Handle error - show appropriate message
+      toast.error("Impossible d'accéder au microphone. Veuillez vérifier les autorisations.");
     }
   };
 

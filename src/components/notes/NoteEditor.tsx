@@ -107,20 +107,27 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
         const filePath = `${fileName}`;
         
+        console.log('Uploading audio file to path:', filePath);
+        
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('audio-files')
           .upload(filePath, audioBlob, {
             cacheControl: '3600',
-            upsert: false
+            upsert: false,
+            contentType: 'audio/webm'
           });
           
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error('Audio upload error:', uploadError);
+          throw uploadError;
+        }
         
         // Récupérer l'URL publique
         const { data: { publicUrl } } = supabase.storage
           .from('audio-files')
           .getPublicUrl(filePath);
           
+        console.log('Audio file uploaded successfully:', publicUrl);
         uploadedAudioUrl = publicUrl;
       }
 

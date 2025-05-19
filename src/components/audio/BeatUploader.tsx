@@ -59,7 +59,8 @@ export function BeatUploader({ isOpen, onClose, onUploadSuccess }: BeatUploaderP
         .from('audio-files')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type
         });
       
       if (uploadError) throw uploadError;
@@ -68,6 +69,8 @@ export function BeatUploader({ isOpen, onClose, onUploadSuccess }: BeatUploaderP
       const { data: { publicUrl } } = supabase.storage
         .from('audio-files')
         .getPublicUrl(filePath);
+      
+      console.log('File uploaded successfully:', publicUrl);
       
       // Ajouter le beat dans la base de données
       const { error: insertError } = await supabase
@@ -103,7 +106,7 @@ export function BeatUploader({ isOpen, onClose, onUploadSuccess }: BeatUploaderP
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center">
-            <Music className="mr-2 h-5 w-5 text-ibh-purple" />
+            <Music className="mr-2 h-5 w-5 text-primary" />
             Télécharger un nouveau beat
           </DialogTitle>
         </DialogHeader>
@@ -128,18 +131,18 @@ export function BeatUploader({ isOpen, onClose, onUploadSuccess }: BeatUploaderP
             <div className="flex items-center justify-center w-full">
               <label
                 htmlFor="file-upload"
-                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:hover:bg-bray-800 dark:bg-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600"
+                className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-background hover:bg-background/90 dark:bg-background/10 hover:border-primary border-muted-foreground/30"
               >
                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <Upload className="w-8 h-8 mb-3 text-gray-400" />
-                  <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Upload className="w-8 h-8 mb-3 text-muted-foreground" />
+                  <p className="mb-2 text-sm text-muted-foreground">
                     <span className="font-semibold">Cliquez pour télécharger</span> ou glissez-déposez
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     MP3, WAV (MAX. 10 MB)
                   </p>
                   {file && (
-                    <p className="mt-2 text-sm font-medium text-ibh-purple">
+                    <p className="mt-2 text-sm font-medium text-primary">
                       {file.name}
                     </p>
                   )}
