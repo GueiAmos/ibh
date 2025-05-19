@@ -1,89 +1,97 @@
 
-import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { FolderIcon, BookmarkIcon, Music } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface CreateFolderDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (name: string, icon: 'note' | 'beat') => void;
+  onSubmit: (name: string, color: string) => void;
 }
 
-export function CreateFolderDialog({ open, onOpenChange, onSubmit }: CreateFolderDialogProps) {
-  const [name, setName] = useState('');
-  const [icon, setIcon] = useState<'note' | 'beat'>('note');
+export const CreateFolderDialog = ({
+  open,
+  onOpenChange,
+  onSubmit,
+}: CreateFolderDialogProps) => {
+  const [folderName, setFolderName] = useState('');
+  const [folderColor, setFolderColor] = useState('purple');
 
-  const handleSubmit = () => {
-    if (name.trim()) {
-      onSubmit(name.trim(), icon);
-      setName('');
-      setIcon('note');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (folderName.trim()) {
+      onSubmit(folderName, folderColor);
+      setFolderName('');
+      setFolderColor('purple');
     }
   };
 
+  const colorOptions = [
+    { value: 'purple', label: 'Violet', className: 'bg-purple-500' },
+    { value: 'blue', label: 'Bleu', className: 'bg-blue-500' },
+    { value: 'green', label: 'Vert', className: 'bg-green-500' },
+    { value: 'amber', label: 'Ambre', className: 'bg-amber-500' },
+    { value: 'rose', label: 'Rose', className: 'bg-rose-500' },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center">
-            <FolderIcon className="mr-2 h-5 w-5 text-ibh-purple" />
-            Créer un nouveau dossier
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4 py-4">
-          <div className="flex flex-col space-y-2">
-            <label htmlFor="folder-name" className="text-sm font-medium">
-              Nom du dossier
-            </label>
-            <Input
-              id="folder-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Projet Album"
-              autoComplete="off"
-            />
-          </div>
-          
-          <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">
-              Type de contenu
-            </label>
-            <div className="flex space-x-2">
-              <Button
-                type="button"
-                variant={icon === 'note' ? "default" : "outline"}
-                className="flex-1"
-                onClick={() => setIcon('note')}
+      <DialogContent className="sm:max-w-[425px]">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Créer un nouveau dossier</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Nom du dossier</Label>
+              <Input
+                id="name"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+                placeholder="Mon nouveau dossier"
+                maxLength={30}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Couleur du dossier</Label>
+              <RadioGroup
+                value={folderColor}
+                onValueChange={setFolderColor}
+                className="flex gap-2"
               >
-                <BookmarkIcon className="mr-2 h-4 w-4" />
-                Notes
-              </Button>
-              <Button
-                type="button"
-                variant={icon === 'beat' ? "default" : "outline"}
-                className="flex-1"
-                onClick={() => setIcon('beat')}
-              >
-                <Music className="mr-2 h-4 w-4" />
-                Beats
-              </Button>
+                {colorOptions.map((color) => (
+                  <div key={color.value} className="flex flex-col items-center">
+                    <RadioGroupItem
+                      value={color.value}
+                      id={color.value}
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor={color.value}
+                      className={`h-8 w-8 rounded-full cursor-pointer ring-offset-background transition-all peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-ring peer-focus-visible:ring-offset-2 peer-data-[state=checked]:ring-2 peer-data-[state=checked]:ring-primary ${color.className}`}
+                    />
+                  </div>
+                ))}
+              </RadioGroup>
             </div>
           </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Annuler
-          </Button>
-          <Button onClick={handleSubmit} disabled={!name.trim()}>
-            <FolderIcon className="mr-2 h-4 w-4" />
-            Créer
-          </Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="submit">Créer</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
-}
+};
+

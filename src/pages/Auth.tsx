@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Loader2, Music, BookmarkIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,7 +17,18 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
+  
+  // Get tab from URL query parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'signup') {
+      setActiveTab('signup');
+    }
+  }, [location]);
   
   // Redirect if already logged in
   useEffect(() => {
@@ -103,7 +114,7 @@ const Auth = () => {
         
         <motion.div variants={item} className="w-full max-w-md">
           <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm">
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(v) => setActiveTab(v as 'signin' | 'signup')} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="signin">Connexion</TabsTrigger>
                 <TabsTrigger value="signup">Inscription</TabsTrigger>

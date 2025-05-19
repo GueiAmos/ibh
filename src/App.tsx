@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import Notes from "./pages/Notes";
@@ -40,12 +40,12 @@ const App = () => {
           <BrowserRouter>
             <AnimatePresence mode="wait">
               <Routes>
-                {/* Route publique */}
+                {/* Route publique pour l'accueil et l'authentification */}
+                <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 
-                {/* Routes protégées */}
+                {/* Routes protégées - accessibles uniquement si connecté */}
                 <Route element={<ProtectedRoute />}>
-                  <Route path="/" element={<Index />} />
                   <Route path="/notes" element={<Notes />} />
                   <Route path="/beats" element={<Beats />} />
                   <Route path="/folders" element={<Folders />} />

@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Music, BookmarkIcon, CirclePlay, Headphones, MicVocal, FolderOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
+  const { user } = useAuth();
+  
   const container = {
     hidden: { opacity: 0 },
     show: {
@@ -56,18 +59,37 @@ const Index = () => {
               variants={item}
               className="flex flex-wrap gap-4 justify-center"
             >
-              <Button asChild size="lg" className="rounded-full">
-                <Link to="/notes">
-                  <BookmarkIcon className="mr-2 h-5 w-5" />
-                  Commencer à écrire
-                </Link>
-              </Button>
-              <Button variant="outline" asChild size="lg" className="rounded-full">
-                <Link to="/beats">
-                  <Music className="mr-2 h-5 w-5" />
-                  Explorer les beats
-                </Link>
-              </Button>
+              {user ? (
+                <>
+                  <Button asChild size="lg" className="rounded-full">
+                    <Link to="/notes">
+                      <BookmarkIcon className="mr-2 h-5 w-5" />
+                      Commencer à écrire
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild size="lg" className="rounded-full">
+                    <Link to="/beats">
+                      <Music className="mr-2 h-5 w-5" />
+                      Explorer les beats
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild size="lg" className="rounded-full">
+                    <Link to="/auth">
+                      <BookmarkIcon className="mr-2 h-5 w-5" />
+                      Se connecter
+                    </Link>
+                  </Button>
+                  <Button variant="outline" asChild size="lg" className="rounded-full">
+                    <Link to="/auth?tab=signup">
+                      <Music className="mr-2 h-5 w-5" />
+                      S'inscrire
+                    </Link>
+                  </Button>
+                </>
+              )}
             </motion.div>
           </motion.div>
         </section>

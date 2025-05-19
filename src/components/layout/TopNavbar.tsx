@@ -4,9 +4,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ui/ThemeSwitcher';
 import { cn } from '@/lib/utils';
-import { LogOut, SidebarTrigger } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { SidebarTrigger as SidebarToggle } from '@/components/ui/sidebar';
+import { SidebarTrigger } from '@/components/ui/sidebar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function TopNavbar() {
   const navigate = useNavigate();
@@ -18,6 +27,10 @@ export function TopNavbar() {
     navigate('/auth');
   };
 
+  // Get user's email first part (before @) for display
+  const userDisplayName = user?.email?.split('@')[0] || 'Utilisateur';
+  const userInitials = userDisplayName.substring(0, 2).toUpperCase();
+
   return (
     <motion.div 
       initial={{ y: -20, opacity: 0 }} 
@@ -26,16 +39,39 @@ export function TopNavbar() {
       className="flex items-center justify-between px-6 py-3 border-b bg-background/95 backdrop-blur-sm sticky top-0 z-40"
     >
       <div className="flex items-center gap-2">
-        <SidebarToggle />
+        <SidebarTrigger />
         <span className="text-xl font-bold text-primary">IBH</span>
       </div>
       
       <div className="flex items-center space-x-4">
         <ThemeToggle />
-        {user && (
-          <Button variant="outline" size="sm" onClick={handleSignOut} className="flex items-center gap-2 hidden md:flex">
-            <LogOut className="h-4 w-4" />
-            <span>Déconnexion</span>
+        
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full h-8 w-8 overflow-hidden">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{userInitials}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <User className="mr-2 h-4 w-4" />
+                <span>{userDisplayName}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut} className="text-red-500 focus:text-red-500">
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Déconnexion</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button variant="outline" size="sm" onClick={() => navigate('/auth')} className="flex items-center gap-2">
+            <User className="h-4 w-4" />
+            <span>Connexion</span>
           </Button>
         )}
       </div>

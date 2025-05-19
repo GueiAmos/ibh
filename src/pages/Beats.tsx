@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { Music, Plus, Loader2, Search, Upload } from 'lucide-react';
+import { Music, Plus, Loader2, Search, Upload, Trash2 } from 'lucide-react';
 import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import { BeatUploader } from '@/components/audio/BeatUploader';
 import { toast } from 'sonner';
@@ -10,6 +10,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FolderPlus } from "lucide-react";
 
 interface Beat {
   id: string;
@@ -18,13 +36,20 @@ interface Beat {
   created_at: string;
 }
 
+interface Folder {
+  id: string;
+  name: string;
+}
+
 const Beats = () => {
   const [beats, setBeats] = useState<Beat[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [isUploaderOpen, setIsUploaderOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
 
+  // Fetch beats data
   useEffect(() => {
     const fetchBeats = async () => {
       if (!user) return;
@@ -33,6 +58,7 @@ const Beats = () => {
         const { data, error } = await supabase
           .from('beats')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         
         if (error) throw error;
@@ -47,6 +73,29 @@ const Beats = () => {
     
     fetchBeats();
   }, [user]);
+  
+  // Fetch folders
+  useEffect(() => {
+    const fetchFolders = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('folders')
+          .select('id, name')
+          .eq('user_id', user.id)
+          .order('name');
+        
+        if (error) throw error;
+        
+        setFolders(data || []);
+      } catch (error: any) {
+        console.error('Error fetching folders:', error);
+      }
+    };
+    
+    fetchFolders();
+  }, [user]);
 
   const handleUploadSuccess = (fileUrl: string, fileName: string) => {
     // Le beat a déjà été ajouté à la base de données dans le composant BeatUploader
@@ -56,6 +105,7 @@ const Beats = () => {
         const { data, error } = await supabase
           .from('beats')
           .select('*')
+          .eq('user_id', user?.id)
           .order('created_at', { ascending: false });
         
         if (error) throw error;
@@ -67,6 +117,70 @@ const Beats = () => {
     };
     
     fetchBeats();
+  };
+  
+  // Delete beat function
+  const handleDeleteBeat = async (beatId: string) => {
+    try {
+      // First remove from any folders
+      const { error: folderItemError } = await supabase
+        .from('folder_items')
+        .delete()
+        .eq('item_id', beatId)
+        .eq('item_type', 'beat');
+        
+      if (folderItemError) throw folderItemError;
+      
+      // Then delete the beat
+      const { error } = await supabase
+        .from('beats')
+        .delete()
+        .eq('id', beatId);
+        
+      if (error) throw error;
+      
+      setBeats(beats.filter(beat => beat.id !== beatId));
+      toast.success('Beat supprimé');
+    } catch (error: any) {
+      console.error('Error deleting beat:', error);
+      toast.error('Erreur lors de la suppression du beat');
+    }
+  };
+  
+  // Add beat to folder
+  const handleAddToFolder = async (beatId: string, folderId: string) => {
+    try {
+      // Check if already in folder
+      const { data: existingData, error: existingError } = await supabase
+        .from('folder_items')
+        .select('*')
+        .eq('folder_id', folderId)
+        .eq('item_id', beatId)
+        .eq('item_type', 'beat');
+        
+      if (existingError) throw existingError;
+      
+      if (existingData && existingData.length > 0) {
+        toast.info('Ce beat est déjà dans ce dossier');
+        return;
+      }
+      
+      // Add to folder
+      const { error } = await supabase
+        .from('folder_items')
+        .insert({
+          folder_id: folderId,
+          item_id: beatId,
+          item_type: 'beat'
+        });
+        
+      if (error) throw error;
+      
+      toast.success('Beat ajouté au dossier');
+    } catch (error: any) {
+      console.error('Error adding to folder:', error);
+      toast.error('Erreur lors de l\'ajout au dossier');
+    }
   };
 
   // Filtrer les beats selon la recherche
@@ -152,9 +266,62 @@ const Beats = () => {
               <motion.div 
                 key={beat.id} 
                 variants={item}
-                className="glass-panel p-5 rounded-xl hover:shadow-md transition-all"
+                className="glass-panel p-5 rounded-xl hover:shadow-md transition-all relative group"
               >
-                <h3 className="font-medium text-lg mb-3 truncate">{beat.title}</h3>
+                <div className="absolute top-3 right-3 flex space-x-2">
+                  {/* Add to folder dropdown */}
+                  {folders.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 rounded-full transition-opacity">
+                          <FolderPlus className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {folders.map(folder => (
+                          <DropdownMenuItem 
+                            key={folder.id}
+                            onClick={() => handleAddToFolder(beat.id, folder.id)}
+                          >
+                            {folder.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                  
+                  {/* Delete button */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button 
+                        variant="destructive" 
+                        size="icon" 
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 rounded-full transition-opacity"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Cette action ne peut pas être annulée. Ce beat sera supprimé définitivement.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={() => handleDeleteBeat(beat.id)} 
+                          className="bg-red-500 hover:bg-red-600"
+                        >
+                          Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                
+                <h3 className="font-medium text-lg mb-3 truncate pr-20">{beat.title}</h3>
                 <AudioPlayer audioSrc={beat.audio_url} />
                 <p className="text-xs text-muted-foreground mt-2">
                   Ajouté le {new Date(beat.created_at).toLocaleDateString()}
