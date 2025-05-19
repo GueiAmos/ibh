@@ -2,7 +2,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/ui/ThemeSwitcher';
+import ThemeToggle from '@/components/ui/ThemeSwitcher';
 import { cn } from '@/lib/utils';
 import { LogOut, Music, BookOpen, Settings, Home } from 'lucide-react';
 import { motion } from 'framer-motion';

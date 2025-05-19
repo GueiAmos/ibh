@@ -4,6 +4,7 @@ import { TopNavbar } from '@/components/layout/TopNavbar';
 import { MobileActions } from '@/components/mobile/MobileActions';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -11,11 +12,12 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar for mobile */}
-      <Sidebar className="lg:hidden" />
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       {/* Main content with top navbar for desktop */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">

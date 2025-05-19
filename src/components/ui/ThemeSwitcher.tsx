@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const ThemeSwitcher = () => {
+const ThemeToggle = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     // Check for saved theme or user preference
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
@@ -43,4 +43,6 @@ const ThemeSwitcher = () => {
   );
 };
 
-export default ThemeSwitcher;
+// Exporter à la fois comme export par défaut et export nommé
+export { ThemeToggle };
+export default ThemeToggle;
