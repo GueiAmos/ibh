@@ -9,6 +9,80 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activities: {
+        Row: {
+          author: string
+          category: string
+          content: string
+          coverimage: string
+          created_at: string | null
+          date: string
+          excerpt: string
+          id: string
+          location: string
+          time: string
+          title: string
+        }
+        Insert: {
+          author: string
+          category: string
+          content: string
+          coverimage: string
+          created_at?: string | null
+          date: string
+          excerpt: string
+          id?: string
+          location: string
+          time: string
+          title: string
+        }
+        Update: {
+          author?: string
+          category?: string
+          content?: string
+          coverimage?: string
+          created_at?: string | null
+          date?: string
+          excerpt?: string
+          id?: string
+          location?: string
+          time?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      activity_images: {
+        Row: {
+          activityid: string
+          caption: string
+          created_at: string | null
+          id: string
+          src: string
+        }
+        Insert: {
+          activityid: string
+          caption: string
+          created_at?: string | null
+          id?: string
+          src: string
+        }
+        Update: {
+          activityid?: string
+          caption?: string
+          created_at?: string | null
+          id?: string
+          src?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_images_activityid_fkey"
+            columns: ["activityid"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beats: {
         Row: {
           audio_url: string
