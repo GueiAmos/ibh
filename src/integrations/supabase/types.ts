@@ -107,6 +107,62 @@ export type Database = {
         }
         Relationships: []
       }
+      folder_items: {
+        Row: {
+          created_at: string
+          folder_id: string
+          id: string
+          item_id: string
+          item_type: string
+        }
+        Insert: {
+          created_at?: string
+          folder_id: string
+          id?: string
+          item_id: string
+          item_type: string
+        }
+        Update: {
+          created_at?: string
+          folder_id?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_items_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      folders: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notes: {
         Row: {
           audio_url: string | null

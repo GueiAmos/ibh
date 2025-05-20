@@ -88,7 +88,9 @@ const Beats = () => {
         
         if (error) throw error;
         
-        setFolders(data || []);
+        if (data) {
+          setFolders(data as Folder[]);
+        }
       } catch (error: any) {
         console.error('Error fetching folders:', error);
       }

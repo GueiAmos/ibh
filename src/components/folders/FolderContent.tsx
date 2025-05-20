@@ -44,16 +44,16 @@ export const FolderContent = ({ folderId, folderName, onBack, onItemDeleted }: F
       
       try {
         // Fetch notes in this folder
-        const { data: notesData, error: notesError } = await supabase
+        const { data: noteItems, error: notesError } = await supabase
           .from('folder_items')
-          .select('item_id')
+          .select('*')
           .eq('folder_id', folderId)
           .eq('item_type', 'note');
           
         if (notesError) throw notesError;
         
-        if (notesData?.length) {
-          const noteIds = notesData.map(item => item.item_id);
+        if (noteItems?.length) {
+          const noteIds = noteItems.map(item => item.item_id);
           
           const { data: notesContent, error: notesContentError } = await supabase
             .from('notes')
@@ -77,16 +77,16 @@ export const FolderContent = ({ folderId, folderName, onBack, onItemDeleted }: F
         }
         
         // Fetch beats in this folder
-        const { data: beatsData, error: beatsError } = await supabase
+        const { data: beatItems, error: beatsError } = await supabase
           .from('folder_items')
-          .select('item_id')
+          .select('*')
           .eq('folder_id', folderId)
           .eq('item_type', 'beat');
           
         if (beatsError) throw beatsError;
         
-        if (beatsData?.length) {
-          const beatIds = beatsData.map(item => item.item_id);
+        if (beatItems?.length) {
+          const beatIds = beatItems.map(item => item.item_id);
           
           const { data: beatsContent, error: beatsContentError } = await supabase
             .from('beats')
@@ -236,7 +236,7 @@ export const FolderContent = ({ folderId, folderName, onBack, onItemDeleted }: F
                 {beats.map((beat) => (
                   <motion.div 
                     key={beat.id} 
-                    className="glass-panel p-5 rounded-xl hover:shadow-md transition-all relative"
+                    className="glass-panel p-5 rounded-xl hover:shadow-md transition-all relative group"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                   >

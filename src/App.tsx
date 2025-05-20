@@ -12,11 +12,22 @@ import Folders from "./pages/Folders";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AnimatePresence } from "framer-motion";
 
 const queryClient = new QueryClient();
+
+// Protection route - redirects to login if not authenticated
+const RequireAuth = ({ children }: { children: JSX.Element }) => {
+  const { user } = useAuth();
+  
+  if (!user) {
+    return <Navigate to="/auth" />;
+  }
+  
+  return children;
+};
 
 const App = () => {
   // Check system preference for dark mode and set initial theme
