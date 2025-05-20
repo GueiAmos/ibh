@@ -9,7 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
-import { Folder } from '@/types/folders';
+import { Folder as FolderType } from '@/types/folders';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,15 +36,9 @@ interface Beat {
   created_at: string;
 }
 
-interface Folder {
-  id: string;
-  name: string;
-  color: string;
-}
-
 const Beats = () => {
   const [beats, setBeats] = useState<Beat[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
+  const [folders, setFolders] = useState<FolderType[]>([]);
   const [isUploaderOpen, setIsUploaderOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,7 +83,7 @@ const Beats = () => {
         
         if (error) throw error;
         
-        setFolders(data as Folder[] || []);
+        setFolders(data as FolderType[] || []);
       } catch (error: any) {
         console.error('Error fetching folders:', error);
       }
