@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export default function ThemeToggle() {
+export function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.theme || "light";
@@ -52,5 +52,5 @@ export default function ThemeToggle() {
   );
 }
 
-// Also export as a named export for backward compatibility
-export { ThemeToggle };
+// Export both as default and named export for compatibility
+export default ThemeToggle;

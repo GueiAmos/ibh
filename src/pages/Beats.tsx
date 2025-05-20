@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
+import { Folder } from '@/types/folders';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +39,7 @@ interface Beat {
 interface Folder {
   id: string;
   name: string;
+  color: string;
 }
 
 const Beats = () => {
@@ -82,15 +83,13 @@ const Beats = () => {
       try {
         const { data, error } = await supabase
           .from('folders')
-          .select('id, name')
+          .select('id, name, color')
           .eq('user_id', user.id)
           .order('name');
         
         if (error) throw error;
         
-        if (data) {
-          setFolders(data as Folder[]);
-        }
+        setFolders(data as Folder[] || []);
       } catch (error: any) {
         console.error('Error fetching folders:', error);
       }

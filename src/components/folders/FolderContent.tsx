@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { NoteItem, Note } from '@/components/notes/NoteItem';
@@ -18,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { motion } from 'framer-motion';
+import { FolderItem } from '@/types/folders';
 
 interface Beat {
   id: string;
@@ -53,7 +53,7 @@ export const FolderContent = ({ folderId, folderName, onBack, onItemDeleted }: F
         if (notesError) throw notesError;
         
         if (noteItems?.length) {
-          const noteIds = noteItems.map(item => item.item_id);
+          const noteIds = noteItems.map((item: FolderItem) => item.item_id);
           
           const { data: notesContent, error: notesContentError } = await supabase
             .from('notes')
@@ -86,7 +86,7 @@ export const FolderContent = ({ folderId, folderName, onBack, onItemDeleted }: F
         if (beatsError) throw beatsError;
         
         if (beatItems?.length) {
-          const beatIds = beatItems.map(item => item.item_id);
+          const beatIds = beatItems.map((item: FolderItem) => item.item_id);
           
           const { data: beatsContent, error: beatsContentError } = await supabase
             .from('beats')
