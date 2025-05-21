@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
-import { BookmarkIcon, Music } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export type Note = {
@@ -12,7 +12,6 @@ export type Note = {
   content: string;
   createdAt: Date;
   updatedAt: Date;
-  favorite: boolean;
   audioAttached: boolean;
   sections: {
     type: 'verse' | 'chorus' | 'bridge' | 'hook' | 'outro';
@@ -28,15 +27,8 @@ type NoteItemProps = {
 };
 
 export function NoteItem({ note, onClick, isSelected = false, index }: NoteItemProps) {
-  const [isFavorite, setIsFavorite] = useState(note.favorite);
   const [isHovered, setIsHovered] = useState(false);
   
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-    // Add actual favorite logic here
-  };
-
   const timeAgo = formatDistanceToNow(new Date(note.updatedAt), {
     addSuffix: true,
     locale: fr,
@@ -66,23 +58,11 @@ export function NoteItem({ note, onClick, isSelected = false, index }: NoteItemP
       >
         <div className="flex justify-between items-start mb-3">
           <h3 className="font-medium text-lg truncate pr-2">{note.title || "Note sans titre"}</h3>
-          <div className="flex gap-1.5">
-            {note.audioAttached && (
-              <div className="tooltip" data-tip="Audio attaché">
-                <Music size={18} className="text-ibh-blue" />
-              </div>
-            )}
-            <BookmarkIcon 
-              size={18} 
-              className={cn(
-                "cursor-pointer transition-colors",
-                isFavorite 
-                  ? "fill-primary text-primary" 
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              onClick={handleFavoriteClick}
-            />
-          </div>
+          {note.audioAttached && (
+            <div className="tooltip" data-tip="Audio attaché">
+              <Music size={18} className="text-ibh-blue" />
+            </div>
+          )}
         </div>
         <p className="text-sm text-muted-foreground line-clamp-3 mb-3 min-h-[3rem]">
           {previewContent}

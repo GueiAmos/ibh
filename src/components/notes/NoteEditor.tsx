@@ -5,6 +5,8 @@ import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
 import { VoiceRecordingsList } from '@/components/audio/VoiceRecordingsList';
 import { BeatSelector } from '@/components/notes/BeatSelector';
+import { FolderSelector } from '@/components/notes/FolderSelector';
+import { NoteSections, SectionType } from '@/components/notes/NoteSections';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
@@ -13,8 +15,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Music, Loader2, Trash2 } from 'lucide-react';
-
-type SectionType = 'verse' | 'chorus' | 'bridge' | 'hook' | 'outro';
 
 interface NoteEditorProps {
   noteId?: string;
@@ -29,14 +29,12 @@ interface NoteEditorProps {
 export function NoteEditor({ noteId, initialTitle = '', initialContent = '', className, onSave, onDelete, onClose }: NoteEditorProps) {
   const [title, setTitle] = useState(initialTitle);
   const [currentContent, setCurrentContent] = useState(initialContent || '');
-  const [activeTab, setActiveTab] = useState<'write' | 'record' | 'beats'>('write');
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [sectionType, setSectionType] = useState<SectionType>('verse');
+  const [activeTab, setActiveTab] = useState<'write' | 'record' | 'beats' | 'folders'>('write');
+  const [quickRecording, setQuickRecording] = useState<Blob | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [selectedBeatId, setSelectedBeatId] = useState<string | null>(null);
-  const [quickRecording, setQuickRecording] = useState<Blob | null>(null);
+  const [selectedBeat, setSelectedBeat] = useState<any | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -56,12 +54,8 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
             setTitle(noteData.title);
             setCurrentContent(noteData.content || '');
             
-            if (noteData.audio_url) {
-              setAudioUrl(noteData.audio_url);
-            }
-            
             // Fetch associated beat if any
-            const { data: beatData, error: beatError } = await (supabase as any)
+            const { data: beatData, error: beatError } = await supabase
               .from('note_beats')
               .select('beat_id')
               .eq('note_id', noteId)
@@ -70,6 +64,17 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
               
             if (!beatError && beatData) {
               setSelectedBeatId(beatData.beat_id);
+              
+              // Fetch the beat details
+              const { data: beat, error: beatDetailsError } = await supabase
+                .from('beats')
+                .select('*')
+                .eq('id', beatData.beat_id)
+                .single();
+                
+              if (!beatDetailsError && beat) {
+                setSelectedBeat(beat);
+              }
             }
           }
         } catch (error) {
@@ -83,7 +88,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
   }, [noteId]);
 
   const handleRecordingComplete = async (blob: Blob) => {
-    setAudioBlob(blob);
     setQuickRecording(blob);
   };
 
@@ -101,43 +105,11 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
     setSaving(true);
 
     try {
-      let uploadedAudioUrl = audioUrl;
-
-      // Si un nouveau fichier audio a été enregistré, on l'upload
-      if (audioBlob) {
-        const fileExt = 'webm';
-        const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
-        
-        console.log('Uploading audio file to path:', filePath);
-        
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('audio-files')
-          .upload(filePath, audioBlob, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: 'audio/webm'
-          });
-          
-        if (uploadError) {
-          console.error('Audio upload error:', uploadError);
-          throw uploadError;
-        }
-        
-        // Récupérer l'URL publique
-        const { data: { publicUrl } } = supabase.storage
-          .from('audio-files')
-          .getPublicUrl(filePath);
-          
-        console.log('Audio file uploaded successfully:', publicUrl);
-        uploadedAudioUrl = publicUrl;
-      }
-
       // Create or update note
       let noteId;
       
       if (onSave) {
-        await onSave(title, currentContent, uploadedAudioUrl || undefined);
+        await onSave(title, currentContent, undefined);
       } else {
         if (this.noteId) {
           // Mettre à jour une note existante
@@ -146,7 +118,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
             .update({
               title,
               content: currentContent,
-              audio_url: uploadedAudioUrl,
               updated_at: new Date().toISOString()
             })
             .eq('id', this.noteId)
@@ -163,7 +134,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
             .insert({
               title,
               content: currentContent,
-              audio_url: uploadedAudioUrl,
               user_id: user.id
             })
             .select();
@@ -200,7 +170,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
           const now = new Date();
           const recordingTitle = `Enregistrement du ${now.toLocaleDateString()} à ${now.toLocaleTimeString()}`;
           
-          await (supabase as any)
+          await supabase
             .from('voice_recordings')
             .insert({
               title: recordingTitle,
@@ -247,37 +217,29 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
     }
   };
   
-  const handleAddSection = () => {
-    // Au lieu d'ajouter un bloc séparé, on ajoute un marqueur de section dans le texte
+  const handleAddSection = (sectionType: SectionType) => {
     const sectionMarker = `\n[${sectionType.toUpperCase()}]\n`;
     const newContent = currentContent + sectionMarker;
     setCurrentContent(newContent);
   };
 
-  const sectionLabels: Record<SectionType, string> = {
-    verse: 'Couplet',
-    chorus: 'Refrain',
-    bridge: 'Pont',
-    hook: 'Hook',
-    outro: 'Outro'
-  };
-
-  const sectionClasses: Record<SectionType, string> = {
-    verse: 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700/30',
-    chorus: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700/30',
-    bridge: 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700/30',
-    hook: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/30',
-    outro: 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/30'
+  const sectionColors: Record<string, string> = {
+    verse: 'blue',
+    chorus: 'purple',
+    bridge: 'green',
+    hook: 'orange',
+    outro: 'gray',
   };
   
   // Format text with sections highlighted
   const formatTextWithSections = () => {
     const content = currentContent;
-    const sectionRegex = /\[(VERSE|CHORUS|BRIDGE|HOOK|OUTRO)\]/g;
+    const sectionRegex = /\[(.*?)\]/g;
     
     let formattedContent = content.replace(sectionRegex, (match, sectionType) => {
-      const sectionClass = sectionClasses[sectionType.toLowerCase() as SectionType];
-      return `<div class="section-marker ${sectionClass}">${sectionLabels[sectionType.toLowerCase() as SectionType]}</div>`;
+      const type = sectionType.toLowerCase();
+      const color = sectionColors[type] || 'blue';
+      return `<div class="section-marker ${color}">${sectionType}</div>`;
     });
     
     return formattedContent;
@@ -331,43 +293,30 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
         )}
       </div>
 
-      {/* Audio player for quick recordings */}
-      {(audioUrl || audioBlob) && (
+      {/* Beat player */}
+      {selectedBeat && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-medium">Audio principal</h3>
+            <h3 className="text-lg font-medium">Beat associé: {selectedBeat.title}</h3>
           </div>
           <AudioPlayer 
-            audioSrc={audioBlob ? URL.createObjectURL(audioBlob) : audioUrl || ''}
+            audioSrc={selectedBeat.audio_url}
           />
         </div>
       )}
 
       {/* Editor tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'write' | 'record' | 'beats')} className="flex-1">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'write' | 'record' | 'beats' | 'folders')} className="flex-1">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="write">Écrire</TabsTrigger>
           <TabsTrigger value="record">Enregistrements</TabsTrigger>
           <TabsTrigger value="beats">Beat</TabsTrigger>
+          <TabsTrigger value="folders">Dossiers</TabsTrigger>
         </TabsList>
         
         <TabsContent value="write" className="flex flex-col space-y-4">
-          <div className="mt-4 flex gap-2">
-            <select
-              value={sectionType}
-              onChange={(e) => setSectionType(e.target.value as SectionType)}
-              className="px-3 py-1 rounded-md border border-input bg-background text-sm"
-            >
-              <option value="verse">Couplet</option>
-              <option value="chorus">Refrain</option>
-              <option value="bridge">Pont</option>
-              <option value="hook">Hook</option>
-              <option value="outro">Outro</option>
-            </select>
-            
-            <Button variant="outline" size="sm" onClick={handleAddSection}>
-              Insérer section
-            </Button>
+          <div className="mt-4">
+            <NoteSections onAddSection={handleAddSection} />
           </div>
           
           <textarea
@@ -393,16 +342,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
         </TabsContent>
         
         <TabsContent value="record" className="flex flex-col space-y-4">
-          {/* Quick recording section */}
-          <div className="border rounded-md p-4">
-            <h3 className="text-lg font-medium mb-3">Enregistrement rapide</h3>
-            <VoiceRecorder 
-              onRecordingComplete={handleRecordingComplete}
-            />
-          </div>
-          
-          <Separator />
-          
           {/* Voice recordings list */}
           {noteId && (
             <VoiceRecordingsList 
@@ -412,6 +351,14 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
               }}
             />
           )}
+          
+          {/* Quick recording section */}
+          <div className="border rounded-md p-4">
+            <h3 className="text-lg font-medium mb-3">Enregistrement rapide</h3>
+            <VoiceRecorder 
+              onRecordingComplete={handleRecordingComplete}
+            />
+          </div>
           
           <Button
             onClick={handleSave}
@@ -435,6 +382,29 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
               noteId={noteId} 
               initialBeatId={selectedBeatId || undefined}
               onBeatSelected={(beatId) => setSelectedBeatId(beatId)}
+            />
+          )}
+          
+          <Button
+            onClick={handleSave}
+            disabled={!title.trim() || saving}
+            className="float-right"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sauvegarde...
+              </>
+            ) : (
+              'Enregistrer la note'
+            )}
+          </Button>
+        </TabsContent>
+
+        <TabsContent value="folders" className="space-y-4">
+          {noteId && (
+            <FolderSelector 
+              noteId={noteId}
             />
           )}
           

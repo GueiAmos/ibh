@@ -7,8 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Loader2, Music, BookmarkIcon } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Loader2, Music, ArrowLeft, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -97,14 +97,23 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 flex flex-col">
+      <div className="p-4">
+        <Button variant="ghost" className="group" asChild>
+          <Link to="/">
+            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Retour à l'accueil
+          </Link>
+        </Button>
+      </div>
+      
       <motion.div 
-        className="flex flex-col items-center justify-center px-4 py-12 flex-1"
+        className="flex flex-col items-center justify-center px-4 py-8 flex-1"
         variants={container}
         initial="hidden"
         animate="show"
       >
         <motion.div variants={item} className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
             Ivoire Beat Hub
           </h1>
           <p className="text-lg text-muted-foreground max-w-md mx-auto">
@@ -113,7 +122,7 @@ const Auth = () => {
         </motion.div>
         
         <motion.div variants={item} className="w-full max-w-md">
-          <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm">
+          <Card className="border shadow-xl bg-card/90 backdrop-blur-sm border-primary/20">
             <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(v) => setActiveTab(v as 'signin' | 'signup')} className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="signin">Connexion</TabsTrigger>
@@ -124,7 +133,7 @@ const Auth = () => {
                 <form onSubmit={handleSignIn}>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <BookmarkIcon className="h-5 w-5 text-primary" />
+                      <User className="h-5 w-5 text-primary" />
                       Connexion
                     </CardTitle>
                     <CardDescription>
@@ -159,7 +168,7 @@ const Auth = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-purple-600 hover:shadow-lg transition-all" disabled={loading}>
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -212,7 +221,7 @@ const Auth = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-purple-600 hover:shadow-lg transition-all" disabled={loading}>
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

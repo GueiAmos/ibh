@@ -91,8 +91,7 @@ const Settings = () => {
         .from('profiles')
         .upsert({
           id: user.id,
-          username: username,
-          updated_at: new Date().toISOString()
+          username: username
         });
 
       if (error) throw error;
@@ -133,7 +132,7 @@ const Settings = () => {
           {/* Profile section */}
           <section className="glass-panel p-4 rounded-lg">
             <h2 className="text-xl font-semibold flex items-center mb-4">
-              <User className="mr-2 h-5 w-5 text-ibh-purple" />
+              <User className="mr-2 h-5 w-5 text-primary" />
               Profil
             </h2>
             
@@ -196,7 +195,7 @@ const Settings = () => {
           {/* Notifications section */}
           <section className="glass-panel p-4 rounded-lg">
             <h2 className="text-xl font-semibold flex items-center mb-4">
-              <Bell className="mr-2 h-5 w-5 text-ibh-purple" />
+              <Bell className="mr-2 h-5 w-5 text-primary" />
               Notifications
             </h2>
             
@@ -215,7 +214,7 @@ const Settings = () => {
           {/* Storage section */}
           <section className="glass-panel p-4 rounded-lg">
             <h2 className="text-xl font-semibold flex items-center mb-4">
-              <HardDrive className="mr-2 h-5 w-5 text-ibh-purple" />
+              <HardDrive className="mr-2 h-5 w-5 text-primary" />
               Stockage
             </h2>
             
