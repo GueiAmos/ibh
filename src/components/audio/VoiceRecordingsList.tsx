@@ -52,7 +52,8 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
     const fetchRecordings = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        // Use the any type to bypass TypeScript errors until Supabase types are updated
+        const { data, error } = await (supabase as any)
           .from('voice_recordings')
           .select('*')
           .eq('note_id', noteId)
@@ -104,7 +105,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
       const title = `Enregistrement du ${now.toLocaleDateString()} à ${now.toLocaleTimeString()}`;
       
       // Save recording in database
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('voice_recordings')
         .insert({
           title,
@@ -135,7 +136,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
   const handleDeleteRecording = async (recordingId: string) => {
     try {
       // Delete the recording from database
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('voice_recordings')
         .delete()
         .eq('id', recordingId);
@@ -161,7 +162,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
     }
     
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('voice_recordings')
         .update({ title: editingTitle })
         .eq('id', recordingId);

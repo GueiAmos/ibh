@@ -163,6 +163,45 @@ export type Database = {
         }
         Relationships: []
       }
+      note_beats: {
+        Row: {
+          beat_id: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          note_id: string
+        }
+        Insert: {
+          beat_id: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          note_id: string
+        }
+        Update: {
+          beat_id?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "note_beats_beat_id_fkey"
+            columns: ["beat_id"]
+            isOneToOne: false
+            referencedRelation: "beats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "note_beats_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notes: {
         Row: {
           audio_url: string | null
@@ -284,6 +323,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      voice_recordings: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          note_id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          note_id: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          note_id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_recordings_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "notes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

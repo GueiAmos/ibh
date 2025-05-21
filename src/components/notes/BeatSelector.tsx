@@ -103,7 +103,7 @@ export function BeatSelector({ noteId, initialBeatId, onBeatSelected }: BeatSele
       if (!beat) return;
       
       // Update the note with the selected beat
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('note_beats')
         .upsert({
           note_id: noteId,
@@ -132,7 +132,7 @@ export function BeatSelector({ noteId, initialBeatId, onBeatSelected }: BeatSele
     
     try {
       // Remove the association between note and beat
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('note_beats')
         .delete()
         .eq('note_id', noteId)
