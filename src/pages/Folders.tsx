@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -20,14 +21,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from '@/components/ui/skeleton';
-
-type Folder = {
-  id: string;
-  name: string;
-  color: string;
-  created_at: string;
-  user_id: string;
-};
+import { Folder } from '@/types/folders';
 
 const Folders = () => {
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -165,6 +159,19 @@ const Folders = () => {
     fetchFolderCounts();
   }, [folders, user]);
 
+  // Helper function to get appropriate CSS classes for folder colors
+  const getFolderColorClasses = (color: string) => {
+    const colorMap: {[key: string]: {bg: string, text: string}} = {
+      'purple': { bg: 'bg-purple-500/20', text: 'text-purple-500' },
+      'blue': { bg: 'bg-blue-500/20', text: 'text-blue-500' },
+      'green': { bg: 'bg-green-500/20', text: 'text-green-500' },
+      'amber': { bg: 'bg-amber-500/20', text: 'text-amber-500' },
+      'rose': { bg: 'bg-rose-500/20', text: 'text-rose-500' }
+    };
+    
+    return colorMap[color] || { bg: 'bg-primary/20', text: 'text-primary' };
+  };
+
   return (
     <MainLayout>
       <div className="ibh-container py-4">
@@ -262,6 +269,7 @@ const Folders = () => {
                 {filteredFolders.map(folder => {
                   const counts = folderCounts[folder.id] || { notes: 0, beats: 0 };
                   const totalItems = counts.notes + counts.beats;
+                  const colorClasses = getFolderColorClasses(folder.color);
                   
                   return (
                     <div 
@@ -270,8 +278,8 @@ const Folders = () => {
                       onClick={() => setSelectedFolder(folder)}
                     >
                       <div className="flex items-center mb-3">
-                        <div className={`h-10 w-10 rounded-md flex items-center justify-center bg-${folder.color}-500/20`}>
-                          <FolderIcon className={`h-6 w-6 text-${folder.color}-500`} />
+                        <div className={`h-10 w-10 rounded-md flex items-center justify-center ${colorClasses.bg}`}>
+                          <FolderIcon className={`h-6 w-6 ${colorClasses.text}`} />
                         </div>
                         <div className="ml-3">
                           <h3 className="font-medium">{folder.name}</h3>

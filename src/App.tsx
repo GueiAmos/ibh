@@ -15,7 +15,6 @@ import Auth from "./pages/Auth";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AnimatePresence } from "framer-motion";
-import { MainLayout } from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
 

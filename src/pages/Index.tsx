@@ -1,12 +1,259 @@
 
-import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { Music, BookmarkIcon, CirclePlay, Headphones, MicVocal, FolderOpen } from 'lucide-react';
+import { Music, BookmarkIcon, CirclePlay, Headphones, MicVocal, FolderOpen, LineChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { MainLayout } from '@/components/layout/MainLayout';
 
-const Index = () => {
+// Dashboard components
+const UserDashboard = () => {
+  const [stats, setStats] = useState({
+    notes: 0,
+    beats: 0,
+    folders: 0,
+    recordings: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [recentNotes, setRecentNotes] = useState<any[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchUserStats = async () => {
+      if (!user) return;
+      
+      setLoading(true);
+      try {
+        // Fetch note count
+        const { count: notesCount, error: notesError } = await supabase
+          .from('notes')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        // Fetch beat count
+        const { count: beatsCount, error: beatsError } = await supabase
+          .from('beats')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        // Fetch folder count
+        const { count: foldersCount, error: foldersError } = await supabase
+          .from('folders')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+          
+        // Fetch recording count
+        const { count: recordingsCount, error: recordingsError } = await supabase
+          .from('voice_recordings')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+          
+        // Fetch recent notes
+        const { data: notes, error: recentNotesError } = await supabase
+          .from('notes')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false })
+          .limit(3);
+          
+        if (notes) {
+          setRecentNotes(notes);
+        }
+
+        setStats({
+          notes: notesCount || 0,
+          beats: beatsCount || 0,
+          folders: foldersCount || 0,
+          recordings: recordingsCount || 0
+        });
+      } catch (error) {
+        console.error('Error fetching user stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserStats();
+  }, [user]);
+
+  return (
+    <div className="py-4">
+      <h1 className="text-3xl font-bold mb-6">Tableau de bord</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <StatCard 
+          title="Notes" 
+          value={stats.notes} 
+          icon={<BookmarkIcon className="h-5 w-5 text-blue-500" />} 
+          linkTo="/notes" 
+          loading={loading}
+        />
+        <StatCard 
+          title="Beats" 
+          value={stats.beats} 
+          icon={<Music className="h-5 w-5 text-purple-500" />} 
+          linkTo="/beats" 
+          loading={loading}
+        />
+        <StatCard 
+          title="Dossiers" 
+          value={stats.folders} 
+          icon={<FolderOpen className="h-5 w-5 text-amber-500" />} 
+          linkTo="/folders" 
+          loading={loading}
+        />
+        <StatCard 
+          title="Enregistrements" 
+          value={stats.recordings} 
+          icon={<MicVocal className="h-5 w-5 text-green-500" />} 
+          linkTo="/notes" 
+          loading={loading}
+        />
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="glass-panel p-5 rounded-xl col-span-2">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Notes récentes</h2>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/notes">Voir tout</Link>
+            </Button>
+          </div>
+          
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse flex">
+                  <div className="h-12 w-12 rounded bg-gray-300/20 mr-4"></div>
+                  <div className="flex-1">
+                    <div className="h-4 w-3/4 bg-gray-300/20 rounded mb-2"></div>
+                    <div className="h-3 w-1/2 bg-gray-300/20 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentNotes.length > 0 ? (
+            <div className="space-y-3">
+              {recentNotes.map(note => (
+                <Link 
+                  key={note.id} 
+                  to={`/notes?note=${note.id}`}
+                  className="flex items-start p-3 rounded-lg hover:bg-accent/50 transition-colors"
+                >
+                  <div className="h-10 w-10 rounded flex items-center justify-center bg-blue-500/10 text-blue-500 mr-3">
+                    <BookmarkIcon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium line-clamp-1">{note.title}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Modifié le {new Date(note.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <BookmarkIcon className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-3" />
+              <p className="text-muted-foreground mb-4">Vous n'avez pas encore créé de notes</p>
+              <Button asChild size="sm">
+                <Link to="/notes?new=true">
+                  Créer ma première note
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="glass-panel p-5 rounded-xl">
+          <h2 className="text-xl font-semibold mb-4">Accès rapide</h2>
+          <div className="space-y-3">
+            <QuickAccessButton 
+              to="/notes?new=true" 
+              icon={<BookmarkIcon className="h-5 w-5" />} 
+              label="Nouvelle note" 
+            />
+            <QuickAccessButton 
+              to="/beats" 
+              icon={<Music className="h-5 w-5" />} 
+              label="Explorer les beats" 
+            />
+            <QuickAccessButton 
+              to="/folders" 
+              icon={<FolderOpen className="h-5 w-5" />} 
+              label="Gérer mes dossiers" 
+            />
+            <QuickAccessButton 
+              to="/settings" 
+              icon={<LineChart className="h-5 w-5" />} 
+              label="Voir mes stats" 
+            />
+          </div>
+          
+          <div className="mt-6 pt-5 border-t">
+            <Link 
+              to="/" 
+              className="flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              <CirclePlay className="h-4 w-4 mr-2" />
+              Visiter la page d'accueil
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Stat card component for dashboard
+const StatCard = ({ 
+  title, 
+  value, 
+  icon, 
+  linkTo,
+  loading
+}: { 
+  title: string; 
+  value: number; 
+  icon: React.ReactNode; 
+  linkTo: string;
+  loading: boolean;
+}) => {
+  return (
+    <Link to={linkTo} className="glass-panel rounded-xl p-4 hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-sm text-muted-foreground">{title}</p>
+          {loading ? (
+            <div className="h-8 w-16 bg-gray-300/20 rounded mt-1 animate-pulse"></div>
+          ) : (
+            <p className="text-2xl font-semibold mt-1">{value}</p>
+          )}
+        </div>
+        <div className="h-10 w-10 rounded-full flex items-center justify-center bg-background">
+          {icon}
+        </div>
+      </div>
+    </Link>
+  );
+};
+
+// Quick access button component
+const QuickAccessButton = ({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) => {
+  return (
+    <Button asChild variant="outline" className="w-full justify-start">
+      <Link to={to} className="flex items-center">
+        <span className="mr-2">{icon}</span>
+        {label}
+      </Link>
+    </Button>
+  );
+};
+
+// Landing page component
+const LandingPage = () => {
   const { user, loading } = useAuth();
   
   const container = {
@@ -201,6 +448,50 @@ const FeatureCard = ({
       </div>
     </motion.div>
   );
+};
+
+// Main component that conditionally renders Dashboard or Landing page
+const Index = () => {
+  const { user, loading } = useAuth();
+  const [showLanding, setShowLanding] = useState(false);
+  
+  // If user is logged in but explicitly wants to see landing
+  if (showLanding && user) {
+    return (
+      <MainLayout>
+        <div className="mb-4 flex justify-between items-center">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowLanding(false)}
+            className="mb-2"
+          >
+            Retour au tableau de bord
+          </Button>
+        </div>
+        <LandingPage />
+      </MainLayout>
+    );
+  }
+  
+  // If user is logged in and hasn't chosen to see landing, show dashboard
+  if (user && !showLanding) {
+    return (
+      <MainLayout>
+        <UserDashboard />
+        <div className="text-center mt-8">
+          <Button 
+            variant="link" 
+            onClick={() => setShowLanding(true)}
+          >
+            Voir la page d'accueil
+          </Button>
+        </div>
+      </MainLayout>
+    );
+  }
+  
+  // For users not logged in, show landing page
+  return <LandingPage />;
 };
 
 export default Index;

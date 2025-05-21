@@ -8,9 +8,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ArrowLeft, Loader2, Music, BookText, Plus } from 'lucide-react';
 import { Note } from '@/components/notes/NoteItem';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { 
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, 
+  AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
+import { 
+  Select, SelectContent, SelectGroup, SelectItem, 
+  SelectLabel, SelectTrigger, SelectValue 
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type Beat = {
   id: string;
@@ -59,57 +66,61 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
         setFolder(folderData);
         
         // Fetch notes in this folder
-        const { data: folderNotes, error: notesError } = await (supabase as any)
+        const { data: folderItems, error: itemsError } = await supabase
           .from('folder_items')
-          .select(`
-            item_id,
-            notes:item_id (*)
-          `)
-          .eq('folder_id', folderId)
-          .eq('item_type', 'note');
-          
-        if (notesError) throw notesError;
+          .select('item_id, item_type')
+          .eq('folder_id', folderId);
         
-        if (folderNotes && folderNotes.length > 0) {
-          const formattedNotes = folderNotes
-            .map(item => {
-              if (item.notes) {
-                return {
-                  id: item.notes.id,
-                  title: item.notes.title,
-                  content: item.notes.content || '',
-                  createdAt: new Date(item.notes.created_at),
-                  updatedAt: new Date(item.notes.updated_at),
-                  favorite: false,
-                  audioAttached: !!item.notes.audio_url,
-                  sections: []
-                };
-              }
-              return null;
-            })
-            .filter(Boolean) as Note[];
+        if (itemsError) throw itemsError;
+        
+        if (folderItems && folderItems.length > 0) {
+          // Filter items by type
+          const noteIds = folderItems
+            .filter(item => item.item_type === 'note')
+            .map(item => item.item_id);
             
-          setNotes(formattedNotes);
-        }
-        
-        // Fetch beats in this folder
-        const { data: folderBeats, error: beatsError } = await (supabase as any)
-          .from('folder_items')
-          .select(`
-            item_id,
-            beats:item_id (*)
-          `)
-          .eq('folder_id', folderId)
-          .eq('item_type', 'beat');
-          
-        if (beatsError) throw beatsError;
-        
-        if (folderBeats && folderBeats.length > 0) {
-          const formattedBeats = folderBeats
-            .map(item => item.beats)
-            .filter(Boolean) as Beat[];
+          const beatIds = folderItems
+            .filter(item => item.item_type === 'beat')
+            .map(item => item.item_id);
             
-          setBeats(formattedBeats);
+          // Fetch actual note data if we have any note IDs
+          if (noteIds.length > 0) {
+            const { data: notesData, error: notesError } = await supabase
+              .from('notes')
+              .select('*')
+              .in('id', noteIds);
+              
+            if (notesError) throw notesError;
+            
+            if (notesData) {
+              const formattedNotes = notesData.map(note => ({
+                id: note.id,
+                title: note.title,
+                content: note.content || '',
+                createdAt: new Date(note.created_at),
+                updatedAt: new Date(note.updated_at),
+                favorite: false,
+                audioAttached: !!note.audio_url,
+                sections: []
+              }));
+                
+              setNotes(formattedNotes);
+            }
+          }
+          
+          // Fetch actual beat data if we have any beat IDs
+          if (beatIds.length > 0) {
+            const { data: beatsData, error: beatsError } = await supabase
+              .from('beats')
+              .select('*')
+              .in('id', beatIds);
+              
+            if (beatsError) throw beatsError;
+            
+            if (beatsData) {
+              setBeats(beatsData);
+            }
+          }
         }
         
         // Fetch available notes (not in this folder)
@@ -121,10 +132,14 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
         if (allNotesError) throw allNotesError;
         
         if (allNotes) {
-          const noteIds = new Set(folderNotes?.map(note => note.item_id) || []);
+          const noteIdsInFolder = new Set(
+            folderItems
+              ?.filter(item => item.item_type === 'note')
+              .map(item => item.item_id) || []
+          );
           
           const availableFormattedNotes = allNotes
-            .filter(note => !noteIds.has(note.id))
+            .filter(note => !noteIdsInFolder.has(note.id))
             .map(note => ({
               id: note.id,
               title: note.title,
@@ -148,8 +163,12 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
         if (allBeatsError) throw allBeatsError;
         
         if (allBeats) {
-          const beatIds = new Set(folderBeats?.map(beat => beat.item_id) || []);
-          const availableFormattedBeats = allBeats.filter(beat => !beatIds.has(beat.id));
+          const beatIdsInFolder = new Set(
+            folderItems
+              ?.filter(item => item.item_type === 'beat')
+              .map(item => item.item_id) || []
+          );
+          const availableFormattedBeats = allBeats.filter(beat => !beatIdsInFolder.has(beat.id));
           setAvailableBeats(availableFormattedBeats);
         }
         
@@ -174,7 +193,7 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
       const itemType = activeItemType === 'notes' ? 'note' : 'beat';
       
       // Add item to folder
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from('folder_items')
         .insert({
           folder_id: folderId,
@@ -206,6 +225,7 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
       }
       
       setSelectedItemId('');
+      onItemDeleted(); // Refresh counts in parent component
       
     } catch (error: any) {
       console.error('Error adding item to folder:', error);
@@ -228,6 +248,62 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
     );
   }
 
+  // Helper for applying folder color
+  const getFolderColorClass = () => {
+    if (!folder) return {};
+    
+    const colorMap: {[key: string]: string} = {
+      'purple': 'text-purple-500',
+      'blue': 'text-blue-500',
+      'green': 'text-green-500',
+      'amber': 'text-amber-500',
+      'rose': 'text-rose-500'
+    };
+    
+    return { className: colorMap[folder.color] || 'text-primary' };
+  };
+  
+  const handleRemoveFromFolder = async (itemId: string, itemType: 'note' | 'beat') => {
+    try {
+      const { error } = await supabase
+        .from('folder_items')
+        .delete()
+        .eq('folder_id', folderId)
+        .eq('item_id', itemId)
+        .eq('item_type', itemType);
+        
+      if (error) throw error;
+      
+      toast.success(
+        itemType === 'note' 
+          ? 'Note retirée du dossier' 
+          : 'Beat retiré du dossier'
+      );
+      
+      if (itemType === 'note') {
+        // Find the note to move back to available
+        const removedNote = notes.find(note => note.id === itemId);
+        if (removedNote) {
+          setAvailableNotes([...availableNotes, removedNote]);
+          setNotes(notes.filter(note => note.id !== itemId));
+        }
+      } else {
+        // Find the beat to move back to available
+        const removedBeat = beats.find(beat => beat.id === itemId);
+        if (removedBeat) {
+          setAvailableBeats([...availableBeats, removedBeat]);
+          setBeats(beats.filter(beat => beat.id !== itemId));
+        }
+      }
+      
+      onItemDeleted(); // Refresh counts in parent component
+      
+    } catch (error: any) {
+      console.error('Error removing item from folder:', error);
+      toast.error(`Erreur lors du retrait de l'élément: ${error.message}`);
+    }
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -241,12 +317,7 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
         </Button>
         
         <h1 
-          className="text-2xl md:text-3xl font-bold flex items-center"
-          style={{ color: folder?.color === 'purple' ? 'rgb(147, 51, 234)' : 
-                          folder?.color === 'blue' ? 'rgb(59, 130, 246)' :
-                          folder?.color === 'green' ? 'rgb(34, 197, 94)' :
-                          folder?.color === 'orange' ? 'rgb(249, 115, 22)' : 
-                          'inherit' }}
+          className={`text-2xl md:text-3xl font-bold flex items-center ${getFolderColorClass().className}`}
         >
           {folderName || folder?.name || 'Dossier'}
         </h1>
@@ -268,7 +339,70 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
           <div className="mt-4">
             <TabsContent value="notes">
               {notes.length > 0 ? (
-                <NotesGrid notes={notes} onNoteSelect={handleNoteSelect} />
+                <div className="mb-4">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="mb-4">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter une note
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Ajouter une note</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Sélectionnez une note à ajouter à ce dossier.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      
+                      <div className="py-4">
+                        <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner une note" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Notes disponibles</SelectLabel>
+                              {availableNotes.length === 0 ? (
+                                <SelectItem value="none" disabled>Aucune note disponible</SelectItem>
+                              ) : (
+                                availableNotes.map(note => (
+                                  <SelectItem key={note.id} value={note.id}>
+                                    {note.title}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleAddItemToFolder} 
+                          disabled={!selectedItemId || addingItem}
+                        >
+                          {addingItem ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Ajout en cours...
+                            </>
+                          ) : (
+                            'Ajouter'
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
+                  <NotesGrid 
+                    notes={notes} 
+                    onNoteSelect={handleNoteSelect} 
+                    showActions={true}
+                    onRemove={(noteId) => handleRemoveFromFolder(noteId, 'note')}
+                  />
+                </div>
               ) : (
                 <div className="glass-panel text-center py-10 rounded-xl">
                   <BookText className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-4" />
@@ -337,17 +471,83 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
             
             <TabsContent value="beats">
               {beats.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {beats.map((beat) => (
-                    <div key={beat.id} className="glass-panel p-4 rounded-lg">
-                      <h3 className="text-lg font-medium mb-2">{beat.title}</h3>
-                      <audio
-                        controls
-                        src={beat.audio_url}
-                        className="w-full mt-2"
-                      />
-                    </div>
-                  ))}
+                <div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="mb-4">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter un beat
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Ajouter un beat</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Sélectionnez un beat à ajouter à ce dossier.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      
+                      <div className="py-4">
+                        <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un beat" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Beats disponibles</SelectLabel>
+                              {availableBeats.length === 0 ? (
+                                <SelectItem value="none" disabled>Aucun beat disponible</SelectItem>
+                              ) : (
+                                availableBeats.map(beat => (
+                                  <SelectItem key={beat.id} value={beat.id}>
+                                    {beat.title}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleAddItemToFolder} 
+                          disabled={!selectedItemId || addingItem}
+                        >
+                          {addingItem ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Ajout en cours...
+                            </>
+                          ) : (
+                            'Ajouter'
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {beats.map((beat) => (
+                      <div key={beat.id} className="glass-panel p-4 rounded-lg relative group">
+                        <h3 className="text-lg font-medium mb-2">{beat.title}</h3>
+                        <audio
+                          controls
+                          src={beat.audio_url}
+                          className="w-full mt-2"
+                        />
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRemoveFromFolder(beat.id, 'beat')}
+                        >
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 <div className="glass-panel text-center py-10 rounded-xl">
@@ -416,11 +616,6 @@ export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: F
             </TabsContent>
           </div>
         </Tabs>
-        
-        <Button size="sm" onClick={() => setActiveItemType(activeItemType === 'notes' ? 'beats' : 'notes')}>
-          <Plus className="h-4 w-4 mr-1" />
-          Ajouter
-        </Button>
       </div>
     </div>
   );
