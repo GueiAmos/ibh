@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 
-interface MainLayoutProps {
-  children: React.ReactNode;
+export interface MainLayoutProps {
+  children?: React.ReactNode;
 }
 
 export function MainLayout({ children }: MainLayoutProps) {

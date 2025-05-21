@@ -19,19 +19,6 @@ import { MainLayout } from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
 
-// Root component pour gérer l'affichage ou non du header et sidebar
-const Root = () => {
-  const { user, loading } = useAuth();
-  
-  // Si c'est sur la page d'accueil et que l'utilisateur n'est pas connecté,
-  // on affiche le contenu de Index directement sans MainLayout
-  if (!user && !loading && window.location.pathname === '/') {
-    return <Index />;
-  }
-  
-  return <MainLayout />;
-};
-
 const App = () => {
   // Check system preference for dark mode and set initial theme
   useEffect(() => {

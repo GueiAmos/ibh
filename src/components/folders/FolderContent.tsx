@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { NotesGrid } from '@/components/notes/NotesGrid';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -10,7 +10,7 @@ import { ArrowLeft, Loader2, Music, BookText, Plus } from 'lucide-react';
 import { Note } from '@/components/notes/NoteItem';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type Beat = {
   id: string;
@@ -19,8 +19,14 @@ type Beat = {
   created_at: string;
 };
 
-export function FolderContent() {
-  const { folderId } = useParams<{ folderId: string }>();
+interface FolderContentProps {
+  folderId: string;
+  folderName: string;
+  onBack: () => void;
+  onItemDeleted: () => void;
+}
+
+export function FolderContent({ folderId, folderName, onBack, onItemDeleted }: FolderContentProps) {
   const [folder, setFolder] = useState<{ id: string; name: string; color: string } | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [beats, setBeats] = useState<Beat[]>([]);
@@ -227,7 +233,7 @@ export function FolderContent() {
       <div className="mb-6">
         <Button 
           variant="ghost" 
-          onClick={() => navigate('/folders')} 
+          onClick={onBack} 
           className="mb-4 group"
         >
           <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
@@ -242,7 +248,7 @@ export function FolderContent() {
                           folder?.color === 'orange' ? 'rgb(249, 115, 22)' : 
                           'inherit' }}
         >
-          {folder?.name || 'Dossier'}
+          {folderName || folder?.name || 'Dossier'}
         </h1>
       </div>
       
@@ -258,237 +264,164 @@ export function FolderContent() {
               Beats
             </TabsTrigger>
           </TabsList>
+        
+          <div className="mt-4">
+            <TabsContent value="notes">
+              {notes.length > 0 ? (
+                <NotesGrid notes={notes} onNoteSelect={handleNoteSelect} />
+              ) : (
+                <div className="glass-panel text-center py-10 rounded-xl">
+                  <BookText className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-4" />
+                  <h3 className="text-lg font-medium">Aucune note dans ce dossier</h3>
+                  <p className="text-muted-foreground mt-2 mb-4">
+                    Ajoutez des notes à ce dossier pour les organiser.
+                  </p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter une note
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Ajouter une note</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Sélectionnez une note à ajouter à ce dossier.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      
+                      <div className="py-4">
+                        <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner une note" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Notes disponibles</SelectLabel>
+                              {availableNotes.length === 0 ? (
+                                <SelectItem value="none" disabled>Aucune note disponible</SelectItem>
+                              ) : (
+                                availableNotes.map(note => (
+                                  <SelectItem key={note.id} value={note.id}>
+                                    {note.title}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleAddItemToFolder} 
+                          disabled={!selectedItemId || addingItem}
+                        >
+                          {addingItem ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Ajout en cours...
+                            </>
+                          ) : (
+                            'Ajouter'
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="beats">
+              {beats.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {beats.map((beat) => (
+                    <div key={beat.id} className="glass-panel p-4 rounded-lg">
+                      <h3 className="text-lg font-medium mb-2">{beat.title}</h3>
+                      <audio
+                        controls
+                        src={beat.audio_url}
+                        className="w-full mt-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="glass-panel text-center py-10 rounded-xl">
+                  <Music className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-4" />
+                  <h3 className="text-lg font-medium">Aucun beat dans ce dossier</h3>
+                  <p className="text-muted-foreground mt-2 mb-4">
+                    Ajoutez des beats à ce dossier pour les organiser.
+                  </p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter un beat
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Ajouter un beat</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Sélectionnez un beat à ajouter à ce dossier.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      
+                      <div className="py-4">
+                        <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Sélectionner un beat" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              <SelectLabel>Beats disponibles</SelectLabel>
+                              {availableBeats.length === 0 ? (
+                                <SelectItem value="none" disabled>Aucun beat disponible</SelectItem>
+                              ) : (
+                                availableBeats.map(beat => (
+                                  <SelectItem key={beat.id} value={beat.id}>
+                                    {beat.title}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction 
+                          onClick={handleAddItemToFolder} 
+                          disabled={!selectedItemId || addingItem}
+                        >
+                          {addingItem ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Ajout en cours...
+                            </>
+                          ) : (
+                            'Ajouter'
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </TabsContent>
+          </div>
         </Tabs>
         
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1" />
-              Ajouter
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {activeItemType === 'notes' ? 'Ajouter une note' : 'Ajouter un beat'}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Sélectionnez {activeItemType === 'notes' ? 'une note' : 'un beat'} à ajouter à ce dossier.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            
-            <div className="py-4">
-              {activeItemType === 'notes' ? (
-                <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une note" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Notes disponibles</SelectLabel>
-                      {availableNotes.length === 0 ? (
-                        <SelectItem value="none" disabled>Aucune note disponible</SelectItem>
-                      ) : (
-                        availableNotes.map(note => (
-                          <SelectItem key={note.id} value={note.id}>
-                            {note.title}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un beat" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Beats disponibles</SelectLabel>
-                      {availableBeats.length === 0 ? (
-                        <SelectItem value="none" disabled>Aucun beat disponible</SelectItem>
-                      ) : (
-                        availableBeats.map(beat => (
-                          <SelectItem key={beat.id} value={beat.id}>
-                            {beat.title}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleAddItemToFolder} 
-                disabled={!selectedItemId || addingItem}
-              >
-                {addingItem ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Ajout en cours...
-                  </>
-                ) : (
-                  'Ajouter'
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button size="sm" onClick={() => setActiveItemType(activeItemType === 'notes' ? 'beats' : 'notes')}>
+          <Plus className="h-4 w-4 mr-1" />
+          Ajouter
+        </Button>
       </div>
-
-      <Tabs.TabsContent value="notes">
-        {notes.length > 0 ? (
-          <NotesGrid notes={notes} onNoteSelect={handleNoteSelect} />
-        ) : (
-          <div className="glass-panel text-center py-10 rounded-xl">
-            <BookText className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-4" />
-            <h3 className="text-lg font-medium">Aucune note dans ce dossier</h3>
-            <p className="text-muted-foreground mt-2 mb-4">
-              Ajoutez des notes à ce dossier pour les organiser.
-            </p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter une note
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Ajouter une note</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Sélectionnez une note à ajouter à ce dossier.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                
-                <div className="py-4">
-                  <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner une note" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Notes disponibles</SelectLabel>
-                        {availableNotes.length === 0 ? (
-                          <SelectItem value="none" disabled>Aucune note disponible</SelectItem>
-                        ) : (
-                          availableNotes.map(note => (
-                            <SelectItem key={note.id} value={note.id}>
-                              {note.title}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleAddItemToFolder} 
-                    disabled={!selectedItemId || addingItem}
-                  >
-                    {addingItem ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Ajout en cours...
-                      </>
-                    ) : (
-                      'Ajouter'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
-      </Tabs.TabsContent>
-      
-      <Tabs.TabsContent value="beats">
-        {beats.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {beats.map((beat) => (
-              <div key={beat.id} className="glass-panel p-4 rounded-lg">
-                <h3 className="text-lg font-medium mb-2">{beat.title}</h3>
-                <audio
-                  controls
-                  src={beat.audio_url}
-                  className="w-full mt-2"
-                />
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="glass-panel text-center py-10 rounded-xl">
-            <Music className="mx-auto h-12 w-12 text-muted-foreground opacity-30 mb-4" />
-            <h3 className="text-lg font-medium">Aucun beat dans ce dossier</h3>
-            <p className="text-muted-foreground mt-2 mb-4">
-              Ajoutez des beats à ce dossier pour les organiser.
-            </p>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Ajouter un beat
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Ajouter un beat</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Sélectionnez un beat à ajouter à ce dossier.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                
-                <div className="py-4">
-                  <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un beat" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Beats disponibles</SelectLabel>
-                        {availableBeats.length === 0 ? (
-                          <SelectItem value="none" disabled>Aucun beat disponible</SelectItem>
-                        ) : (
-                          availableBeats.map(beat => (
-                            <SelectItem key={beat.id} value={beat.id}>
-                              {beat.title}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={handleAddItemToFolder} 
-                    disabled={!selectedItemId || addingItem}
-                  >
-                    {addingItem ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Ajout en cours...
-                      </>
-                    ) : (
-                      'Ajouter'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
-      </Tabs.TabsContent>
     </div>
   );
 }
