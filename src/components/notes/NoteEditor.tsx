@@ -11,15 +11,10 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Music, Loader2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Music, Loader2, Trash2 } from 'lucide-react';
 
 type SectionType = 'verse' | 'chorus' | 'bridge' | 'hook' | 'outro';
-
-type Section = {
-  id: string;
-  type: SectionType;
-  content: string;
-};
 
 interface NoteEditorProps {
   noteId?: string;
@@ -27,17 +22,19 @@ interface NoteEditorProps {
   initialContent?: string;
   className?: string;
   onSave?: (title: string, content: string, audioUrl?: string) => Promise<void>;
+  onDelete?: () => Promise<void>;
+  onClose?: () => void;
 }
 
-export function NoteEditor({ noteId, initialTitle = '', initialContent = '', className, onSave }: NoteEditorProps) {
+export function NoteEditor({ noteId, initialTitle = '', initialContent = '', className, onSave, onDelete, onClose }: NoteEditorProps) {
   const [title, setTitle] = useState(initialTitle);
-  const [currentContent, setCurrentContent] = useState('');
-  const [sections, setSections] = useState<Section[]>([]);
+  const [currentContent, setCurrentContent] = useState(initialContent || '');
   const [activeTab, setActiveTab] = useState<'write' | 'record' | 'beats'>('write');
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [sectionType, setSectionType] = useState<SectionType>('verse');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [selectedBeatId, setSelectedBeatId] = useState<string | null>(null);
   const [quickRecording, setQuickRecording] = useState<Blob | null>(null);
   const { user } = useAuth();
@@ -64,7 +61,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
             }
             
             // Fetch associated beat if any
-            const { data: beatData, error: beatError } = await supabase
+            const { data: beatData, error: beatError } = await (supabase as any)
               .from('note_beats')
               .select('beat_id')
               .eq('note_id', noteId)
@@ -84,19 +81,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
 
     fetchNote();
   }, [noteId]);
-
-  const handleSaveSection = () => {
-    if (!currentContent.trim()) return;
-    
-    const newSection: Section = {
-      id: Date.now().toString(),
-      type: sectionType,
-      content: currentContent
-    };
-    
-    setSections([...sections, newSection]);
-    setCurrentContent('');
-  };
 
   const handleRecordingComplete = async (blob: Blob) => {
     setAudioBlob(blob);
@@ -149,16 +133,11 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
         uploadedAudioUrl = publicUrl;
       }
 
-      // Compiler le contenu de la note (inclure les sections)
-      const fullContent = sections.map(section => 
-        `[${section.type.toUpperCase()}]\n${section.content}`
-      ).join('\n\n') || currentContent;
-
       // Create or update note
       let noteId;
       
       if (onSave) {
-        await onSave(title, fullContent, uploadedAudioUrl || undefined);
+        await onSave(title, currentContent, uploadedAudioUrl || undefined);
       } else {
         if (this.noteId) {
           // Mettre à jour une note existante
@@ -166,7 +145,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
             .from('notes')
             .update({
               title,
-              content: fullContent,
+              content: currentContent,
               audio_url: uploadedAudioUrl,
               updated_at: new Date().toISOString()
             })
@@ -183,7 +162,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
             .from('notes')
             .insert({
               title,
-              content: fullContent,
+              content: currentContent,
               audio_url: uploadedAudioUrl,
               user_id: user.id
             })
@@ -221,7 +200,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
           const now = new Date();
           const recordingTitle = `Enregistrement du ${now.toLocaleDateString()} à ${now.toLocaleTimeString()}`;
           
-          await supabase
+          await (supabase as any)
             .from('voice_recordings')
             .insert({
               title: recordingTitle,
@@ -240,6 +219,41 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
     }
   };
 
+  const handleDeleteNote = async () => {
+    if (!noteId) return;
+    
+    setDeleting(true);
+    try {
+      // Delete the note
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', noteId);
+        
+      if (error) throw error;
+      
+      toast.success('Note supprimée avec succès');
+      
+      if (onDelete) {
+        await onDelete();
+      } else if (onClose) {
+        onClose();
+      }
+    } catch (error: any) {
+      console.error('Error deleting note:', error);
+      toast.error(`Erreur lors de la suppression: ${error.message}`);
+    } finally {
+      setDeleting(false);
+    }
+  };
+  
+  const handleAddSection = () => {
+    // Au lieu d'ajouter un bloc séparé, on ajoute un marqueur de section dans le texte
+    const sectionMarker = `\n[${sectionType.toUpperCase()}]\n`;
+    const newContent = currentContent + sectionMarker;
+    setCurrentContent(newContent);
+  };
+
   const sectionLabels: Record<SectionType, string> = {
     verse: 'Couplet',
     chorus: 'Refrain',
@@ -255,11 +269,24 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
     hook: 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-700/30',
     outro: 'bg-gray-50 dark:bg-gray-900/20 border-gray-200 dark:border-gray-700/30'
   };
+  
+  // Format text with sections highlighted
+  const formatTextWithSections = () => {
+    const content = currentContent;
+    const sectionRegex = /\[(VERSE|CHORUS|BRIDGE|HOOK|OUTRO)\]/g;
+    
+    let formattedContent = content.replace(sectionRegex, (match, sectionType) => {
+      const sectionClass = sectionClasses[sectionType.toLowerCase() as SectionType];
+      return `<div class="section-marker ${sectionClass}">${sectionLabels[sectionType.toLowerCase() as SectionType]}</div>`;
+    });
+    
+    return formattedContent;
+  };
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Title input */}
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <input
           type="text"
           value={title}
@@ -267,6 +294,41 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
           placeholder="Titre de la chanson"
           className="w-full text-2xl font-heading font-semibold bg-transparent border-0 p-2 focus:outline-none focus:ring-0"
         />
+        
+        {noteId && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action ne peut pas être annulée. Cette note et tout son contenu seront définitivement supprimés.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleDeleteNote}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  {deleting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Suppression...
+                    </>
+                  ) : (
+                    'Supprimer la note'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Audio player for quick recordings */}
@@ -278,28 +340,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
           <AudioPlayer 
             audioSrc={audioBlob ? URL.createObjectURL(audioBlob) : audioUrl || ''}
           />
-        </div>
-      )}
-
-      {/* Sections list */}
-      {sections.length > 0 && (
-        <div className="mb-6 space-y-3">
-          {sections.map(section => (
-            <div 
-              key={section.id}
-              className={cn(
-                "p-3 rounded-md border",
-                sectionClasses[section.type]
-              )}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {sectionLabels[section.type]}
-                </span>
-              </div>
-              <p className="whitespace-pre-wrap">{section.content}</p>
-            </div>
-          ))}
         </div>
       )}
 
@@ -324,19 +364,21 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
               <option value="hook">Hook</option>
               <option value="outro">Outro</option>
             </select>
+            
+            <Button variant="outline" size="sm" onClick={handleAddSection}>
+              Insérer section
+            </Button>
           </div>
           
           <textarea
             value={currentContent}
             onChange={(e) => setCurrentContent(e.target.value)}
-            placeholder="Écrivez votre texte ici..."
+            placeholder="Écrivez votre texte ici... Utilisez les boutons ci-dessus pour insérer des sections."
             className="flex-1 resize-none p-3 rounded-md border border-input bg-background min-h-[150px] focus:outline-none focus:ring-1 focus:ring-ring"
+            style={{ whiteSpace: 'pre-wrap' }}
           />
           
-          <div className="flex justify-end space-x-2">
-            <Button onClick={handleSaveSection} disabled={!currentContent.trim()}>
-              Ajouter la section
-            </Button>
+          <div className="flex justify-end">
             <Button onClick={handleSave} disabled={!title.trim() || saving}>
               {saving ? (
                 <>

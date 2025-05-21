@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   
   const container = {
     hidden: { opacity: 0 },
@@ -26,128 +26,128 @@ const Index = () => {
   };
 
   return (
-    <MainLayout>
-      <div className="relative overflow-hidden">
-        {/* Background elements */}
-        <div className="absolute top-20 right-10 w-64 h-64 rounded-full bg-primary/10 blur-3xl -z-10" />
-        <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl -z-10" />
-        
-        {/* Hero section */}
-        <section className="ibh-container pt-12 pb-20">
+    <div className="relative overflow-hidden">
+      {/* Background elements */}
+      <div className="absolute top-20 right-10 w-64 h-64 rounded-full bg-primary/10 blur-3xl -z-10" />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl -z-10" />
+      
+      {/* Hero section */}
+      <section className="ibh-container pt-12 pb-20">
+        <motion.div 
+          className="flex flex-col items-center text-center"
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
+          <motion.h1 
+            variants={item}
+            className="text-4xl md:text-6xl font-bold mb-4 leading-tight"
+          >
+            Votre <span className="text-gradient">studio d'écriture</span> musical
+          </motion.h1>
+
+          <motion.p 
+            variants={item}
+            className="text-lg mb-8 max-w-2xl text-muted-foreground"
+          >
+            Un espace créatif pour écrire, enregistrer et perfectionner 
+            vos textes sur des beats inspirants.
+          </motion.p>
+          
           <motion.div 
-            className="flex flex-col items-center text-center"
+            variants={item}
+            className="flex flex-wrap gap-4 justify-center"
+          >
+            {!loading && (user ? (
+              <>
+                <Button asChild size="lg" className="rounded-full">
+                  <Link to="/notes">
+                    <BookmarkIcon className="mr-2 h-5 w-5" />
+                    Commencer à écrire
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild size="lg" className="rounded-full">
+                  <Link to="/beats">
+                    <Music className="mr-2 h-5 w-5" />
+                    Explorer les beats
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild size="lg" className="rounded-full">
+                  <Link to="/auth">
+                    <BookmarkIcon className="mr-2 h-5 w-5" />
+                    Se connecter
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild size="lg" className="rounded-full">
+                  <Link to="/auth?tab=signup">
+                    <Music className="mr-2 h-5 w-5" />
+                    S'inscrire
+                  </Link>
+                </Button>
+              </>
+            ))}
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Features section */}
+      <section className="bg-accent/50 dark:bg-accent/50 py-20">
+        <div className="ibh-container">
+          <motion.h2 
+            className="text-3xl font-bold text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            Créez sans limites
+          </motion.h2>
+
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             variants={container}
             initial="hidden"
-            animate="show"
+            whileInView="show"
+            viewport={{ once: true }}
           >
-            <motion.h1 
-              variants={item}
-              className="text-4xl md:text-6xl font-bold mb-4 leading-tight"
-            >
-              Votre <span className="text-gradient">studio d'écriture</span> musical
-            </motion.h1>
-
-            <motion.p 
-              variants={item}
-              className="text-lg mb-8 max-w-2xl text-muted-foreground"
-            >
-              Un espace créatif pour écrire, enregistrer et perfectionner 
-              vos textes sur des beats inspirants.
-            </motion.p>
-            
-            <motion.div 
-              variants={item}
-              className="flex flex-wrap gap-4 justify-center"
-            >
-              {user ? (
-                <>
-                  <Button asChild size="lg" className="rounded-full">
-                    <Link to="/notes">
-                      <BookmarkIcon className="mr-2 h-5 w-5" />
-                      Commencer à écrire
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild size="lg" className="rounded-full">
-                    <Link to="/beats">
-                      <Music className="mr-2 h-5 w-5" />
-                      Explorer les beats
-                    </Link>
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button asChild size="lg" className="rounded-full">
-                    <Link to="/auth">
-                      <BookmarkIcon className="mr-2 h-5 w-5" />
-                      Se connecter
-                    </Link>
-                  </Button>
-                  <Button variant="outline" asChild size="lg" className="rounded-full">
-                    <Link to="/auth?tab=signup">
-                      <Music className="mr-2 h-5 w-5" />
-                      S'inscrire
-                    </Link>
-                  </Button>
-                </>
-              )}
-            </motion.div>
+            <FeatureCard 
+              icon={<BookmarkIcon className="h-12 w-12 text-primary" />}
+              title="Notes Structurées"
+              description="Organisez vos textes avec des sections claires: couplet, refrain, pont et plus."
+            />
+            <FeatureCard 
+              icon={<Headphones className="h-12 w-12 text-primary" />}
+              title="Beats Intégrés"
+              description="Écoutez des beats tout en écrivant pour rester dans le rythme et l'ambiance."
+            />
+            <FeatureCard 
+              icon={<MicVocal className="h-12 w-12 text-primary" />}
+              title="Enregistrement Vocal"
+              description="Enregistrez votre voix directement dans l'application pour tester vos flows."
+            />
+            <FeatureCard 
+              icon={<CirclePlay className="h-12 w-12 text-primary" />}
+              title="Lecture Synchronisée"
+              description="Écoutez vos enregistrements en même temps que les beats pour affiner votre style."
+            />
+            <FeatureCard 
+              icon={<FolderOpen className="h-12 w-12 text-primary" />}
+              title="Organisation"
+              description="Classez vos créations dans des dossiers pour retrouver facilement vos projets."
+            />
+            <FeatureCard 
+              icon={<Music className="h-12 w-12 text-primary" />}
+              title="Bibliothèque de Beats"
+              description="Accédez à votre collection personnelle de beats pour toujours avoir l'inspiration."
+            />
           </motion.div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features section */}
-        <section className="bg-accent/50 dark:bg-accent/50 py-20">
-          <div className="ibh-container">
-            <motion.h2 
-              className="text-3xl font-bold text-center mb-12"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              Créez sans limites
-            </motion.h2>
-
-            <motion.div 
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-              variants={container}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true }}
-            >
-              <FeatureCard 
-                icon={<BookmarkIcon className="h-12 w-12 text-primary" />}
-                title="Notes Structurées"
-                description="Organisez vos textes avec des sections claires: couplet, refrain, pont et plus."
-              />
-              <FeatureCard 
-                icon={<Headphones className="h-12 w-12 text-primary" />}
-                title="Beats Intégrés"
-                description="Écoutez des beats tout en écrivant pour rester dans le rythme et l'ambiance."
-              />
-              <FeatureCard 
-                icon={<MicVocal className="h-12 w-12 text-primary" />}
-                title="Enregistrement Vocal"
-                description="Enregistrez votre voix directement dans l'application pour tester vos flows."
-              />
-              <FeatureCard 
-                icon={<CirclePlay className="h-12 w-12 text-primary" />}
-                title="Lecture Synchronisée"
-                description="Écoutez vos enregistrements en même temps que les beats pour affiner votre style."
-              />
-              <FeatureCard 
-                icon={<FolderOpen className="h-12 w-12 text-primary" />}
-                title="Organisation"
-                description="Classez vos créations dans des dossiers pour retrouver facilement vos projets."
-              />
-              <FeatureCard 
-                icon={<Music className="h-12 w-12 text-primary" />}
-                title="Bibliothèque de Beats"
-                description="Accédez à votre collection personnelle de beats pour toujours avoir l'inspiration."
-              />
-            </motion.div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
+      {/* CTA Section - Only show when not logged in */}
+      {!loading && !user && (
         <section className="ibh-container py-20">
           <motion.div 
             className="glass-panel p-8 md:p-12 text-center rounded-3xl relative overflow-hidden"
@@ -171,8 +171,8 @@ const Index = () => {
             </Button>
           </motion.div>
         </section>
-      </div>
-    </MainLayout>
+      )}
+    </div>
   );
 };
 

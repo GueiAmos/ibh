@@ -15,18 +15,21 @@ import Auth from "./pages/Auth";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AnimatePresence } from "framer-motion";
+import { MainLayout } from "./components/layout/MainLayout";
 
 const queryClient = new QueryClient();
 
-// Protection route - redirects to login if not authenticated
-const RequireAuth = ({ children }: { children: JSX.Element }) => {
-  const { user } = useAuth();
+// Root component pour gérer l'affichage ou non du header et sidebar
+const Root = () => {
+  const { user, loading } = useAuth();
   
-  if (!user) {
-    return <Navigate to="/auth" />;
+  // Si c'est sur la page d'accueil et que l'utilisateur n'est pas connecté,
+  // on affiche le contenu de Index directement sans MainLayout
+  if (!user && !loading && window.location.pathname === '/') {
+    return <Index />;
   }
   
-  return children;
+  return <MainLayout />;
 };
 
 const App = () => {
@@ -51,8 +54,10 @@ const App = () => {
           <BrowserRouter>
             <AnimatePresence mode="wait">
               <Routes>
-                {/* Route publique pour l'accueil et l'authentification */}
+                {/* Route publique pour l'accueil */}
                 <Route path="/" element={<Index />} />
+                
+                {/* Route pour l'authentification */}
                 <Route path="/auth" element={<Auth />} />
                 
                 {/* Routes protégées - accessibles uniquement si connecté */}

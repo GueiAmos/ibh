@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Settings as SettingsIcon, User, Bell, HardDrive, Trash } from 'lucide-react';
+import { Settings as SettingsIcon, User, Bell, HardDrive, Trash, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -17,11 +17,13 @@ const Settings = () => {
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [offlineModeEnabled, setOfflineModeEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) return;
+      setLoading(true);
 
       try {
         // Récupérer le profil utilisateur
@@ -31,23 +33,45 @@ const Settings = () => {
           .eq('id', user.id)
           .single();
 
-        if (profileError && profileError.code !== 'PGRST116') {
-          throw profileError;
-        }
-
-        if (profile) {
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          // Si le profil n'existe pas, nous allons le créer
+          if (profileError.code === 'PGRST116') {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({ 
+                id: user.id, 
+                username: user.email?.split('@')[0] || '' 
+              });
+            
+            if (insertError) {
+              throw insertError;
+            } else {
+              // Nouvelle tentative de récupération après création
+              const { data: newProfile } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single();
+                
+              if (newProfile) {
+                setUsername(newProfile.username || user.email?.split('@')[0] || '');
+              }
+            }
+          } else {
+            throw profileError;
+          }
+        } else if (profile) {
           setUsername(profile.username || user.email?.split('@')[0] || '');
-        } else {
-          // Si le profil n'existe pas encore, utiliser l'email
-          setUsername(user.email?.split('@')[0] || '');
         }
 
         // Définir l'email de l'utilisateur
         setEmail(user.email || '');
-
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error setting up profile:', error);
         toast.error('Erreur lors du chargement du profil');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -60,7 +84,7 @@ const Settings = () => {
       return;
     }
 
-    setLoading(true);
+    setUpdating(true);
 
     try {
       const { error } = await supabase
@@ -78,7 +102,7 @@ const Settings = () => {
       console.error('Error updating profile:', error);
       toast.error(`Erreur lors de la mise à jour du profil: ${error.message}`);
     } finally {
-      setLoading(false);
+      setUpdating(false);
     }
   };
 
@@ -122,6 +146,8 @@ const Settings = () => {
                   id="username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Votre nom d'utilisateur"
+                  disabled={loading}
                 />
               </div>
               
@@ -141,8 +167,13 @@ const Settings = () => {
                 </p>
               </div>
               
-              <Button onClick={handleSaveProfile} disabled={loading}>
-                {loading ? 'Enregistrement...' : 'Enregistrer'}
+              <Button onClick={handleSaveProfile} disabled={loading || updating}>
+                {updating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Enregistrement...
+                  </>
+                ) : 'Enregistrer'}
               </Button>
             </div>
           </section>

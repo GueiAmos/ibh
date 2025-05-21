@@ -147,6 +147,36 @@ const Notes = () => {
     }
   };
 
+  const handleDeleteNote = async () => {
+    try {
+      // Refresh notes list
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedNotes = data?.map(note => ({
+        id: note.id,
+        title: note.title,
+        content: note.content || '',
+        createdAt: new Date(note.created_at),
+        updatedAt: new Date(note.updated_at),
+        favorite: false,
+        audioAttached: !!note.audio_url,
+        sections: []
+      })) || [];
+
+      setNotes(formattedNotes);
+      handleCloseEditor();
+      
+    } catch (error: any) {
+      console.error('Error refreshing notes after delete:', error);
+      toast.error(`Erreur lors du rafraîchissement des notes: ${error.message}`);
+    }
+  };
+
   const pageVariants = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },
@@ -179,6 +209,8 @@ const Notes = () => {
                   initialTitle={selectedNote?.title}
                   initialContent={selectedNote?.content}
                   onSave={handleSaveNote}
+                  onDelete={handleDeleteNote}
+                  onClose={handleCloseEditor}
                 />
               </div>
             </motion.div>
