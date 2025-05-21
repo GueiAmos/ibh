@@ -30,11 +30,12 @@ export function NotesGrid({ notes, onNoteSelect, showActions = false, onRemove }
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {notes.map((note) => (
+          {notes.map((note, index) => (
             <div key={note.id} className="relative group">
               <NoteItem 
                 note={note} 
-                onClick={() => onNoteSelect(note)} 
+                onClick={() => onNoteSelect(note)}
+                index={index}
               />
               
               {showActions && onRemove && (
