@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
 import { VoiceRecordingsList } from '@/components/audio/VoiceRecordingsList';
 import { BeatSelector } from '@/components/notes/BeatSelector';
@@ -12,13 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Music, Loader2, Trash2, Folder } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Music, Loader2, Trash2 } from 'lucide-react';
 
 interface NoteEditorProps {
   noteId?: string;
@@ -39,8 +34,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
   const [deleting, setDeleting] = useState(false);
   const [selectedBeatId, setSelectedBeatId] = useState<string | null>(null);
   const [selectedBeat, setSelectedBeat] = useState<any | null>(null);
-  const [folders, setFolders] = useState<any[]>([]);
-  const [noteFolders, setNoteFolders] = useState<string[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -92,92 +85,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
 
     fetchNote();
   }, [noteId]);
-
-  // Fetch folders for dropdown
-  useEffect(() => {
-    const fetchFolders = async () => {
-      if (!user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('folders')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('name');
-          
-        if (error) throw error;
-        setFolders(data || []);
-      } catch (error) {
-        console.error('Error fetching folders:', error);
-      }
-    };
-    
-    fetchFolders();
-  }, [user]);
-
-  // Fetch note's current folders
-  useEffect(() => {
-    const fetchNoteFolders = async () => {
-      if (!noteId || !user) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('folder_items')
-          .select('folder_id')
-          .eq('item_id', noteId)
-          .eq('item_type', 'note');
-          
-        if (error) throw error;
-        
-        const folderIds = data.map(item => item.folder_id);
-        setNoteFolders(folderIds);
-      } catch (error) {
-        console.error('Error fetching note folders:', error);
-      }
-    };
-    
-    fetchNoteFolders();
-  }, [noteId, user]);
-
-  const handleAddToFolder = async (folderId: string) => {
-    if (!noteId || !user) return;
-    
-    try {
-      const isInFolder = noteFolders.includes(folderId);
-      
-      if (isInFolder) {
-        // Remove from folder
-        const { error } = await supabase
-          .from('folder_items')
-          .delete()
-          .eq('folder_id', folderId)
-          .eq('item_id', noteId)
-          .eq('item_type', 'note');
-          
-        if (error) throw error;
-        
-        setNoteFolders(prev => prev.filter(id => id !== folderId));
-        toast.success('Note retirée du dossier');
-      } else {
-        // Add to folder
-        const { error } = await supabase
-          .from('folder_items')
-          .insert({
-            folder_id: folderId,
-            item_id: noteId,
-            item_type: 'note'
-          });
-          
-        if (error) throw error;
-        
-        setNoteFolders(prev => [...prev, folderId]);
-        toast.success('Note ajoutée au dossier');
-      }
-    } catch (error: any) {
-      console.error('Error updating folder:', error);
-      toast.error('Erreur lors de la mise à jour du dossier');
-    }
-  };
 
   const handleRecordingComplete = async (blob: Blob) => {
     setQuickRecording(blob);
@@ -315,14 +222,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
     setCurrentContent(newContent);
   };
 
-  const sectionColors: Record<string, string> = {
-    verse: 'blue',
-    chorus: 'purple',
-    bridge: 'green',
-    hook: 'orange',
-    outro: 'gray',
-  };
-
   return (
     <div className={cn("flex flex-col h-full", className)}>
       {/* Title input and actions */}
@@ -336,49 +235,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
         />
         
         <div className="flex items-center gap-2">
-          {/* Folder dropdown */}
-          {noteId && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Folder className="h-4 w-4 mr-2" />
-                  Dossiers
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {folders.length === 0 ? (
-                  <div className="px-2 py-1 text-sm text-muted-foreground">
-                    Aucun dossier disponible
-                  </div>
-                ) : (
-                  folders.map((folder) => {
-                    const isInFolder = noteFolders.includes(folder.id);
-                    return (
-                      <DropdownMenuItem
-                        key={folder.id}
-                        onClick={() => handleAddToFolder(folder.id)}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className={cn(
-                              "w-3 h-3 rounded-full",
-                              `bg-${folder.color}-500`
-                            )} 
-                          />
-                          <span>{folder.name}</span>
-                        </div>
-                        {isInFolder && (
-                          <div className="w-2 h-2 rounded-full bg-green-500" />
-                        )}
-                      </DropdownMenuItem>
-                    );
-                  })
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
           {noteId && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -436,23 +292,23 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
       )}
 
       {/* Editor tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'write' | 'record' | 'beats')} className="flex-1">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'write' | 'record' | 'beats')} className="flex-1 flex flex-col">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="write">Écrire</TabsTrigger>
           <TabsTrigger value="record">Enregistrements</TabsTrigger>
           <TabsTrigger value="beats">Beat</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="write" className="flex flex-col space-y-4">
+        <TabsContent value="write" className="flex flex-col space-y-4 flex-1">
           <div className="mt-4">
             <NoteSections onAddSection={handleAddSection} />
           </div>
           
-          <textarea
+          <Textarea
             value={currentContent}
             onChange={(e) => setCurrentContent(e.target.value)}
             placeholder="Écrivez votre texte ici... Utilisez les boutons ci-dessus pour insérer des sections."
-            className="flex-1 resize-none p-3 rounded-md border border-input bg-background min-h-[150px] focus:outline-none focus:ring-1 focus:ring-ring"
+            className="flex-1 resize-none min-h-[400px] text-base leading-relaxed"
             style={{ whiteSpace: 'pre-wrap' }}
           />
           
@@ -470,7 +326,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
           </div>
         </TabsContent>
         
-        <TabsContent value="record" className="flex flex-col space-y-4">
+        <TabsContent value="record" className="flex flex-col space-y-4 flex-1">
           {/* Voice recordings list */}
           {noteId && (
             <VoiceRecordingsList 
@@ -505,7 +361,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
           </Button>
         </TabsContent>
         
-        <TabsContent value="beats" className="space-y-4">
+        <TabsContent value="beats" className="space-y-4 flex-1">
           {noteId && (
             <BeatSelector 
               noteId={noteId} 

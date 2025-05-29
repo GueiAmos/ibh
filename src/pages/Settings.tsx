@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Settings as SettingsIcon, User, Bell, HardDrive, Trash, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, Bell, HardDrive, Trash, Loader2, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -18,6 +18,7 @@ const Settings = () => {
   const [offlineModeEnabled, setOfflineModeEnabled] = useState(true);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -84,6 +85,11 @@ const Settings = () => {
       return;
     }
 
+    if (!username.trim()) {
+      toast.error('Le nom d\'utilisateur ne peut pas être vide');
+      return;
+    }
+
     setUpdating(true);
 
     try {
@@ -91,12 +97,13 @@ const Settings = () => {
         .from('profiles')
         .upsert({
           id: user.id,
-          username: username
+          username: username.trim()
         });
 
       if (error) throw error;
 
       toast.success('Profil mis à jour avec succès!');
+      setIsEditingUsername(false);
     } catch (error: any) {
       console.error('Error updating profile:', error);
       toast.error(`Erreur lors de la mise à jour du profil: ${error.message}`);
@@ -141,13 +148,60 @@ const Settings = () => {
                 <label htmlFor="username" className="block text-sm font-medium mb-1">
                   Nom d'utilisateur
                 </label>
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Votre nom d'utilisateur"
-                  disabled={loading}
-                />
+                <div className="flex items-center gap-2">
+                  {isEditingUsername ? (
+                    <>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Votre nom d'utilisateur"
+                        disabled={loading || updating}
+                        className="flex-1"
+                      />
+                      <Button 
+                        onClick={handleSaveProfile} 
+                        disabled={loading || updating || !username.trim()}
+                        size="sm"
+                      >
+                        {updating ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          'Sauvegarder'
+                        )}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setIsEditingUsername(false);
+                          // Reset to original value
+                        }}
+                        size="sm"
+                        disabled={updating}
+                      >
+                        Annuler
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Input
+                        id="username"
+                        value={username}
+                        disabled
+                        className="flex-1"
+                      />
+                      <Button 
+                        variant="outline"
+                        onClick={() => setIsEditingUsername(true)}
+                        size="sm"
+                        disabled={loading}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Modifier
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
               
               <div>
@@ -165,15 +219,6 @@ const Settings = () => {
                   L'email ne peut pas être modifié
                 </p>
               </div>
-              
-              <Button onClick={handleSaveProfile} disabled={loading || updating}>
-                {updating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Enregistrement...
-                  </>
-                ) : 'Enregistrer'}
-              </Button>
             </div>
           </section>
           

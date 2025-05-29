@@ -14,7 +14,7 @@ import {
   ChevronDown
 } from "lucide-react";
 
-export type SectionType = 'verse' | 'chorus' | 'bridge' | 'hook' | 'outro' | string;
+export type SectionType = 'couplet' | 'refrain' | 'pont' | 'hook' | 'outro' | string;
 
 interface NoteSectionsProps {
   onAddSection: (sectionType: SectionType) => void;
@@ -26,9 +26,9 @@ export function NoteSections({ onAddSection }: NoteSectionsProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   
   const defaultSections: Array<{type: SectionType, label: string}> = [
-    { type: 'verse', label: 'Couplet' },
-    { type: 'chorus', label: 'Refrain' },
-    { type: 'bridge', label: 'Pont' },
+    { type: 'couplet', label: 'Couplet' },
+    { type: 'refrain', label: 'Refrain' },
+    { type: 'pont', label: 'Pont' },
     { type: 'hook', label: 'Hook' },
     { type: 'outro', label: 'Outro' }
   ];
@@ -58,9 +58,9 @@ export function NoteSections({ onAddSection }: NoteSectionsProps) {
   };
   
   const sectionColors: Record<string, string> = {
-    verse: 'blue',
-    chorus: 'purple',
-    bridge: 'green',
+    couplet: 'blue',
+    refrain: 'purple',
+    pont: 'green',
     hook: 'orange',
     outro: 'gray',
   };
