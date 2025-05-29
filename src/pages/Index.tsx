@@ -6,9 +6,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { cn } from '@/lib/utils';
 
 // Dashboard components
-const UserDashboard = () => {
+const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => void }) => {
   const [stats, setStats] = useState({
     notes: 0,
     beats: 0,
@@ -89,150 +90,123 @@ const UserDashboard = () => {
         </p>
       </div>
       
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-        <StatCard 
-          title="Notes" 
-          value={stats.notes} 
-          icon={<BookmarkIcon className="h-6 w-6" />} 
-          linkTo="/notes" 
-          loading={loading}
+      {/* Quick actions grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <QuickActionCard 
+          to="/notes" 
+          icon={<Plus className="h-8 w-8" />} 
+          title="Nouvelle note" 
+          description="Créer une nouvelle composition"
           color="blue"
         />
-        <StatCard 
-          title="Beats" 
-          value={stats.beats} 
-          icon={<Music className="h-6 w-6" />} 
-          linkTo="/beats" 
-          loading={loading}
+        <QuickActionCard 
+          to="/beats" 
+          icon={<Music className="h-8 w-8" />} 
+          title="Explorer les beats" 
+          description="Découvrir de nouveaux rythmes"
           color="purple"
         />
-        <StatCard 
-          title="Dossiers" 
-          value={stats.folders} 
-          icon={<FolderOpen className="h-6 w-6" />} 
-          linkTo="/folders" 
-          loading={loading}
+        <QuickActionCard 
+          to="/folders" 
+          icon={<FolderOpen className="h-8 w-8" />} 
+          title="Gérer mes dossiers" 
+          description="Organiser mes créations"
           color="green"
-        />
-        <StatCard 
-          title="Enregistrements" 
-          value={stats.recordings} 
-          icon={<MicVocal className="h-6 w-6" />} 
-          linkTo="/notes" 
-          loading={loading}
-          color="orange"
         />
       </div>
       
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
         {/* Recent notes */}
-        <div className="xl:col-span-2">
-          <div className="glass-panel p-6 rounded-2xl h-full">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl md:text-2xl font-semibold flex items-center">
-                <BookmarkIcon className="h-6 w-6 mr-2 text-blue-500" />
-                Notes récentes
-              </h2>
-              <Button asChild variant="ghost" size="sm" className="text-blue-500">
-                <Link to="/notes">Voir tout</Link>
+        <div className="glass-panel p-6 rounded-2xl">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl md:text-2xl font-semibold flex items-center">
+              <BookmarkIcon className="h-6 w-6 mr-2 text-blue-500" />
+              Notes récentes
+            </h2>
+            <Button asChild variant="ghost" size="sm" className="text-blue-500">
+              <Link to="/notes">Voir tout</Link>
+            </Button>
+          </div>
+          
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="animate-pulse flex items-center space-x-4">
+                  <div className="h-12 w-12 rounded-xl bg-gray-300/20"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 bg-gray-300/20 rounded"></div>
+                    <div className="h-3 w-1/2 bg-gray-300/20 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recentNotes.length > 0 ? (
+            <div className="space-y-3">
+              {recentNotes.slice(0, 3).map(note => (
+                <Link 
+                  key={note.id} 
+                  to={`/notes?note=${note.id}`}
+                  className="flex items-center p-4 rounded-xl hover:bg-accent/50 transition-all duration-200 group"
+                >
+                  <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-blue-500/10 text-blue-500 mr-4 group-hover:scale-110 transition-transform">
+                    <BookmarkIcon className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium line-clamp-1 text-lg">{note.title}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Modifié le {new Date(note.updated_at).toLocaleDateString('fr-FR')}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <BookmarkIcon className="mx-auto h-16 w-16 text-muted-foreground opacity-30 mb-4" />
+              <h3 className="text-lg font-medium mb-2">Aucune note pour le moment</h3>
+              <p className="text-muted-foreground mb-6">Commencez par créer votre première note</p>
+              <Button asChild size="lg" className="rounded-xl">
+                <Link to="/notes">
+                  <Plus className="h-5 w-5 mr-2" />
+                  Créer ma première note
+                </Link>
               </Button>
             </div>
-            
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="animate-pulse flex items-center space-x-4">
-                    <div className="h-12 w-12 rounded-xl bg-gray-300/20"></div>
-                    <div className="flex-1 space-y-2">
-                      <div className="h-4 w-3/4 bg-gray-300/20 rounded"></div>
-                      <div className="h-3 w-1/2 bg-gray-300/20 rounded"></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : recentNotes.length > 0 ? (
-              <div className="space-y-3">
-                {recentNotes.map(note => (
-                  <Link 
-                    key={note.id} 
-                    to={`/notes?note=${note.id}`}
-                    className="flex items-center p-4 rounded-xl hover:bg-accent/50 transition-all duration-200 group"
-                  >
-                    <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-blue-500/10 text-blue-500 mr-4 group-hover:scale-110 transition-transform">
-                      <BookmarkIcon className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium line-clamp-1 text-lg">{note.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Modifié le {new Date(note.updated_at).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <BookmarkIcon className="mx-auto h-16 w-16 text-muted-foreground opacity-30 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Aucune note pour le moment</h3>
-                <p className="text-muted-foreground mb-6">Commencez par créer votre première note</p>
-                <Button asChild size="lg" className="rounded-xl">
-                  <Link to="/notes">
-                    <Plus className="h-5 w-5 mr-2" />
-                    Créer ma première note
-                  </Link>
-                </Button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* Quick actions */}
+        {/* Activity summary */}
         <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl">
-            <h2 className="text-xl font-semibold mb-6 flex items-center">
-              <CirclePlay className="h-6 w-6 mr-2 text-primary" />
-              Actions rapides
-            </h2>
-            <div className="space-y-3">
-              <QuickActionButton 
-                to="/notes" 
-                icon={<Plus className="h-5 w-5" />} 
-                label="Nouvelle note" 
-                description="Créer une nouvelle composition"
-                color="blue"
-              />
-              <QuickActionButton 
-                to="/beats" 
-                icon={<Music className="h-5 w-5" />} 
-                label="Explorer les beats" 
-                description="Découvrir de nouveaux rythmes"
-                color="purple"
-              />
-              <QuickActionButton 
-                to="/folders" 
-                icon={<FolderOpen className="h-5 w-5" />} 
-                label="Gérer mes dossiers" 
-                description="Organiser mes créations"
-                color="green"
-              />
-            </div>
-          </div>
-
-          {/* Activity summary */}
           <div className="glass-panel p-6 rounded-2xl">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <TrendingUp className="h-6 w-6 mr-2 text-primary" />
-              Activité
+              Activité récente
             </h2>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Cette semaine</span>
-                <span className="font-medium">{stats.notes + stats.beats} créations</span>
+              <div className="flex justify-between items-center p-4 rounded-xl bg-accent/30">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <BookmarkIcon className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Notes créées</p>
+                    <p className="text-sm text-muted-foreground">Cette semaine</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-blue-600">{stats.notes}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Total</span>
-                <span className="font-medium">{stats.notes + stats.beats + stats.recordings} éléments</span>
+              
+              <div className="flex justify-between items-center p-4 rounded-xl bg-accent/30">
+                <div className="flex items-center space-x-3">
+                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                    <Music className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Beats ajoutés</p>
+                    <p className="text-sm text-muted-foreground">Au total</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-purple-600">{stats.beats}</span>
               </div>
             </div>
           </div>
@@ -257,96 +231,43 @@ const UserDashboard = () => {
   );
 };
 
-// Stat card component for dashboard
-const StatCard = ({ 
-  title, 
-  value, 
-  icon, 
-  linkTo,
-  loading,
-  color = "blue"
-}: { 
-  title: string; 
-  value: number; 
-  icon: React.ReactNode; 
-  linkTo: string;
-  loading: boolean;
-  color?: string;
-}) => {
-  const colorVariants = {
-    blue: "from-blue-500/10 to-blue-600/5 text-blue-600 border-blue-200/50",
-    purple: "from-purple-500/10 to-purple-600/5 text-purple-600 border-purple-200/50",
-    green: "from-green-500/10 to-green-600/5 text-green-600 border-green-200/50",
-    orange: "from-orange-500/10 to-orange-600/5 text-orange-600 border-orange-200/50"
-  };
-
-  return (
-    <Link to={linkTo} className="group">
-      <div className={cn(
-        "glass-panel rounded-2xl p-6 hover:shadow-lg transition-all duration-300 border bg-gradient-to-br group-hover:scale-105",
-        colorVariants[color as keyof typeof colorVariants]
-      )}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className={cn(
-              "h-12 w-12 rounded-xl flex items-center justify-center bg-white/50 dark:bg-black/20 group-hover:scale-110 transition-transform",
-              `text-${color}-600`
-            )}>
-              {icon}
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">{title}</p>
-              {loading ? (
-                <div className="h-8 w-12 bg-gray-300/20 rounded mt-1 animate-pulse"></div>
-              ) : (
-                <p className="text-2xl md:text-3xl font-bold">{value}</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-};
-
-// Quick access button component
-const QuickActionButton = ({ 
+// Quick action card component for dashboard
+const QuickActionCard = ({ 
   to, 
   icon, 
-  label, 
+  title, 
   description,
   color = "blue"
 }: { 
   to: string; 
   icon: React.ReactNode; 
-  label: string;
+  title: string;
   description: string;
   color?: string;
 }) => {
   const colorVariants = {
-    blue: "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950/30",
-    purple: "hover:bg-purple-50 hover:border-purple-200 dark:hover:bg-purple-950/30",
-    green: "hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-950/30",
-    orange: "hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/30"
+    blue: "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950/30 bg-gradient-to-br from-blue-500/10 to-blue-600/5 text-blue-600 border-blue-200/50",
+    purple: "hover:bg-purple-50 hover:border-purple-200 dark:hover:bg-purple-950/30 bg-gradient-to-br from-purple-500/10 to-purple-600/5 text-purple-600 border-purple-200/50",
+    green: "hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-950/30 bg-gradient-to-br from-green-500/10 to-green-600/5 text-green-600 border-green-200/50",
+    orange: "hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/30 bg-gradient-to-br from-orange-500/10 to-orange-600/5 text-orange-600 border-orange-200/50"
   };
 
   return (
     <Link 
       to={to} 
       className={cn(
-        "block p-4 rounded-xl border transition-all duration-200 group",
+        "group block p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg hover:scale-105",
         colorVariants[color as keyof typeof colorVariants]
       )}
     >
-      <div className="flex items-center space-x-3">
+      <div className="flex flex-col items-center text-center space-y-4">
         <div className={cn(
-          "h-10 w-10 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform",
-          `bg-${color}-500/10 text-${color}-600`
+          "h-16 w-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform bg-white/50 dark:bg-black/20"
         )}>
           {icon}
         </div>
-        <div className="flex-1">
-          <h4 className="font-medium">{label}</h4>
+        <div>
+          <h3 className="font-semibold text-lg mb-2">{title}</h3>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
@@ -579,7 +500,7 @@ const Index = () => {
   if (user && !showLanding) {
     return (
       <MainLayout>
-        <UserDashboard />
+        <UserDashboard setShowLanding={setShowLanding} />
       </MainLayout>
     );
   }
