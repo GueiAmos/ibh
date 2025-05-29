@@ -68,6 +68,8 @@ const Notes = () => {
   const handleCloseEditor = () => {
     setIsEditorOpen(false);
     setSelectedNote(null);
+    // Refresh notes after closing editor
+    refreshNotes();
   };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,45 +83,10 @@ const Notes = () => {
         note.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-  const handleSaveNote = async (title: string, content: string, audioUrl?: string) => {
-    if (!user) {
-      toast.error('Vous devez être connecté pour enregistrer une note');
-      return;
-    }
+  const refreshNotes = async () => {
+    if (!user) return;
 
     try {
-      if (selectedNote) {
-        // Update existing note
-        const { error } = await supabase
-          .from('notes')
-          .update({
-            title,
-            content,
-            audio_url: audioUrl,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', selectedNote.id);
-
-        if (error) throw error;
-        
-        toast.success('Note mise à jour avec succès');
-      } else {
-        // Create new note
-        const { error } = await supabase
-          .from('notes')
-          .insert({
-            title,
-            content,
-            audio_url: audioUrl,
-            user_id: user.id
-          });
-
-        if (error) throw error;
-        
-        toast.success('Note créée avec succès');
-      }
-
-      // Refresh notes list
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -139,42 +106,15 @@ const Notes = () => {
       })) || [];
 
       setNotes(formattedNotes);
-      handleCloseEditor();
-
     } catch (error: any) {
-      console.error('Error saving note:', error);
-      toast.error(`Erreur lors de l'enregistrement de la note: ${error.message}`);
+      console.error('Error refreshing notes:', error);
+      toast.error(`Erreur lors du rafraîchissement des notes: ${error.message}`);
     }
   };
 
   const handleDeleteNote = async () => {
-    try {
-      // Refresh notes list
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedNotes = data?.map(note => ({
-        id: note.id,
-        title: note.title,
-        content: note.content || '',
-        createdAt: new Date(note.created_at),
-        updatedAt: new Date(note.updated_at),
-        favorite: false,
-        audioAttached: !!note.audio_url,
-        sections: []
-      })) || [];
-
-      setNotes(formattedNotes);
-      handleCloseEditor();
-      
-    } catch (error: any) {
-      console.error('Error refreshing notes after delete:', error);
-      toast.error(`Erreur lors du rafraîchissement des notes: ${error.message}`);
-    }
+    refreshNotes();
+    handleCloseEditor();
   };
 
   const pageVariants = {
@@ -195,20 +135,12 @@ const Notes = () => {
               exit="exit"
               variants={pageVariants}
             >
-              <Button 
-                variant="ghost" 
-                onClick={handleCloseEditor} 
-                className="mb-4 group"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-                Retour aux notes
-              </Button>
               <div className="glass-panel p-4 md:p-6 rounded-xl">
                 <NoteEditor 
                   noteId={selectedNote?.id} 
                   initialTitle={selectedNote?.title}
                   initialContent={selectedNote?.content}
-                  onSave={handleSaveNote}
+                  onSave={refreshNotes}
                   onDelete={handleDeleteNote}
                   onClose={handleCloseEditor}
                 />

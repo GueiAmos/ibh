@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { NoteEditor } from '@/components/notes/NoteEditor';
+import { MobileNoteEditor } from '@/components/notes/MobileNoteEditor';
 import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
 import { BeatUploader } from '@/components/audio/BeatUploader';
 import { PlusCircle, BookmarkIcon, Music, Mic, X } from 'lucide-react';
@@ -155,7 +155,7 @@ export function MobileActions() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <NoteEditor onSave={handleSaveNote} />
+                  <MobileNoteEditor onSave={handleSaveNote} />
                 </motion.div>
               )}
               

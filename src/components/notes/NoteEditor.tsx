@@ -13,8 +13,11 @@ import { LyricsSuggestions } from './LyricsSuggestions';
 
 interface NoteEditorProps {
   noteId?: string;
-  onBack: () => void;
+  initialTitle?: string;
+  initialContent?: string;
   onSave?: () => void;
+  onDelete?: () => void;
+  onClose?: () => void;
 }
 
 interface Note {
@@ -25,10 +28,10 @@ interface Note {
   updated_at: string;
 }
 
-export function NoteEditor({ noteId, onBack, onSave }: NoteEditorProps) {
+export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onSave, onDelete, onClose }: NoteEditorProps) {
   const [note, setNote] = useState<Note | null>(null);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState(initialTitle);
+  const [content, setContent] = useState(initialContent);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
@@ -38,6 +41,11 @@ export function NoteEditor({ noteId, onBack, onSave }: NoteEditorProps) {
       fetchNote();
     }
   }, [noteId]);
+
+  useEffect(() => {
+    setTitle(initialTitle);
+    setContent(initialContent);
+  }, [initialTitle, initialContent]);
 
   const fetchNote = async () => {
     if (!noteId || !user) return;
@@ -103,7 +111,7 @@ export function NoteEditor({ noteId, onBack, onSave }: NoteEditorProps) {
       }
 
       onSave?.();
-      onBack();
+      onClose?.();
     } catch (error) {
       console.error('Error saving note:', error);
       toast.error('Erreur lors de la sauvegarde');
@@ -141,24 +149,26 @@ export function NoteEditor({ noteId, onBack, onSave }: NoteEditorProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <Button 
-          variant="ghost" 
-          onClick={onBack}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Retour
-        </Button>
-        <Button 
-          onClick={handleSave} 
-          disabled={saving || !title.trim()}
-          className="flex items-center gap-2"
-        >
-          <Save className="h-4 w-4" />
-          {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-        </Button>
-      </div>
+      {onClose && (
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            onClick={onClose}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Retour
+          </Button>
+          <Button 
+            onClick={handleSave} 
+            disabled={saving || !title.trim()}
+            className="flex items-center gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-4">
         <div>
@@ -179,8 +189,8 @@ export function NoteEditor({ noteId, onBack, onSave }: NoteEditorProps) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Écrivez vos paroles ici..."
-            className="mt-1 min-h-[400px] resize-none"
-            rows={20}
+            className="mt-1 min-h-[500px] resize-none"
+            rows={25}
           />
         </div>
 
@@ -203,6 +213,19 @@ export function NoteEditor({ noteId, onBack, onSave }: NoteEditorProps) {
             </div>
           </div>
         </div>
+
+        {!onClose && (
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleSave} 
+              disabled={saving || !title.trim()}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );
