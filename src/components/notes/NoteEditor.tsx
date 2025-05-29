@@ -4,12 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Save, ArrowLeft, BookText, Mic, Music } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { NoteSections, SectionType } from './NoteSections';
 import { LyricsSuggestions } from './LyricsSuggestions';
+import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
+import { BeatSelector } from './BeatSelector';
 
 interface NoteEditorProps {
   noteId?: string;
@@ -136,6 +139,14 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
     toast.success('Suggestion ajoutée!');
   };
 
+  const handleRecordingComplete = (audioBlob: Blob) => {
+    toast.success('Enregistrement terminé! Vous pouvez l\'ajouter à votre note.');
+  };
+
+  const handleBeatSelect = (beatId: string, beatTitle: string) => {
+    toast.success(`Beat "${beatTitle}" sélectionné pour cette note!`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -189,30 +200,71 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Écrivez vos paroles ici..."
-            className="mt-1 min-h-[500px] resize-none"
-            rows={25}
+            className="mt-1 min-h-[400px] resize-none"
+            rows={20}
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Sections</Label>
-            <div className="mt-2">
-              <NoteSections onAddSection={addSection} />
+        <Tabs defaultValue="notes" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="notes" className="flex items-center gap-2">
+              <BookText className="h-4 w-4" />
+              Notes
+            </TabsTrigger>
+            <TabsTrigger value="recording" className="flex items-center gap-2">
+              <Mic className="h-4 w-4" />
+              Enregistrement
+            </TabsTrigger>
+            <TabsTrigger value="beats" className="flex items-center gap-2">
+              <Music className="h-4 w-4" />
+              Beats
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="notes" className="mt-4 space-y-4">
+            <div>
+              <Label>Sections</Label>
+              <div className="mt-2">
+                <NoteSections onAddSection={addSection} />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <Label>Assistant IA</Label>
-            <div className="mt-2">
-              <LyricsSuggestions 
-                currentText={content}
-                onSuggestionSelect={handleSuggestionSelect}
-                context={title}
-              />
+            <div>
+              <Label>Assistant IA</Label>
+              <div className="mt-2">
+                <LyricsSuggestions 
+                  currentText={content}
+                  onSuggestionSelect={handleSuggestionSelect}
+                  context={title}
+                />
+              </div>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="recording" className="mt-4">
+            <div>
+              <Label>Enregistrement vocal</Label>
+              <div className="mt-2">
+                <VoiceRecorder 
+                  onRecordingComplete={handleRecordingComplete}
+                  className="border rounded-lg p-4 bg-background/50" 
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="beats" className="mt-4">
+            <div>
+              <Label>Sélectionner un beat</Label>
+              <div className="mt-2">
+                <BeatSelector 
+                  onBeatSelect={handleBeatSelect}
+                  selectedBeatId={null}
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         {!onClose && (
           <div className="flex justify-end">
