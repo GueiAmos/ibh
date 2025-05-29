@@ -1,11 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { AudioPlayer } from '@/components/audio/AudioPlayer';
 import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
 import { VoiceRecordingsList } from '@/components/audio/VoiceRecordingsList';
 import { BeatSelector } from '@/components/notes/BeatSelector';
-import { FolderSelector } from '@/components/notes/FolderSelector';
 import { NoteSections, SectionType } from '@/components/notes/NoteSections';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +12,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Music, Loader2, Trash2 } from 'lucide-react';
+import { Music, Loader2, Trash2, Folder } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface NoteEditorProps {
   noteId?: string;
@@ -29,12 +33,14 @@ interface NoteEditorProps {
 export function NoteEditor({ noteId, initialTitle = '', initialContent = '', className, onSave, onDelete, onClose }: NoteEditorProps) {
   const [title, setTitle] = useState(initialTitle);
   const [currentContent, setCurrentContent] = useState(initialContent || '');
-  const [activeTab, setActiveTab] = useState<'write' | 'record' | 'beats' | 'folders'>('write');
+  const [activeTab, setActiveTab] = useState<'write' | 'record' | 'beats'>('write');
   const [quickRecording, setQuickRecording] = useState<Blob | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [selectedBeatId, setSelectedBeatId] = useState<string | null>(null);
   const [selectedBeat, setSelectedBeat] = useState<any | null>(null);
+  const [folders, setFolders] = useState<any[]>([]);
+  const [noteFolders, setNoteFolders] = useState<string[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -87,6 +93,92 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
     fetchNote();
   }, [noteId]);
 
+  // Fetch folders for dropdown
+  useEffect(() => {
+    const fetchFolders = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('folders')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('name');
+          
+        if (error) throw error;
+        setFolders(data || []);
+      } catch (error) {
+        console.error('Error fetching folders:', error);
+      }
+    };
+    
+    fetchFolders();
+  }, [user]);
+
+  // Fetch note's current folders
+  useEffect(() => {
+    const fetchNoteFolders = async () => {
+      if (!noteId || !user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('folder_items')
+          .select('folder_id')
+          .eq('item_id', noteId)
+          .eq('item_type', 'note');
+          
+        if (error) throw error;
+        
+        const folderIds = data.map(item => item.folder_id);
+        setNoteFolders(folderIds);
+      } catch (error) {
+        console.error('Error fetching note folders:', error);
+      }
+    };
+    
+    fetchNoteFolders();
+  }, [noteId, user]);
+
+  const handleAddToFolder = async (folderId: string) => {
+    if (!noteId || !user) return;
+    
+    try {
+      const isInFolder = noteFolders.includes(folderId);
+      
+      if (isInFolder) {
+        // Remove from folder
+        const { error } = await supabase
+          .from('folder_items')
+          .delete()
+          .eq('folder_id', folderId)
+          .eq('item_id', noteId)
+          .eq('item_type', 'note');
+          
+        if (error) throw error;
+        
+        setNoteFolders(prev => prev.filter(id => id !== folderId));
+        toast.success('Note retirée du dossier');
+      } else {
+        // Add to folder
+        const { error } = await supabase
+          .from('folder_items')
+          .insert({
+            folder_id: folderId,
+            item_id: noteId,
+            item_type: 'note'
+          });
+          
+        if (error) throw error;
+        
+        setNoteFolders(prev => [...prev, folderId]);
+        toast.success('Note ajoutée au dossier');
+      }
+    } catch (error: any) {
+      console.error('Error updating folder:', error);
+      toast.error('Erreur lors de la mise à jour du dossier');
+    }
+  };
+
   const handleRecordingComplete = async (blob: Blob) => {
     setQuickRecording(blob);
   };
@@ -106,25 +198,24 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
 
     try {
       // Create or update note
-      let noteId;
+      let currentNoteId = noteId;
       
       if (onSave) {
         await onSave(title, currentContent, undefined);
       } else {
-        if (this.noteId) {
+        if (noteId) {
           // Mettre à jour une note existante
-          const { error, data } = await supabase
+          const { error } = await supabase
             .from('notes')
             .update({
               title,
               content: currentContent,
               updated_at: new Date().toISOString()
             })
-            .eq('id', this.noteId)
-            .select();
+            .eq('id', noteId);
 
           if (error) throw error;
-          noteId = this.noteId;
+          currentNoteId = noteId;
           
           toast.success('Note mise à jour avec succès');
         } else {
@@ -136,17 +227,18 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
               content: currentContent,
               user_id: user.id
             })
-            .select();
+            .select()
+            .single();
 
           if (error) throw error;
-          noteId = data[0].id;
+          currentNoteId = data.id;
           
           toast.success('Note créée avec succès');
         }
       }
       
       // If we have a quick recording, save it as a separate recording
-      if (quickRecording && noteId) {
+      if (quickRecording && currentNoteId) {
         // Upload the recording
         const fileExt = 'webm';
         const fileName = `${user.id}/recordings/${Date.now()}.${fileExt}`;
@@ -175,7 +267,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
             .insert({
               title: recordingTitle,
               audio_url: publicUrl,
-              note_id: noteId,
+              note_id: currentNoteId,
               user_id: user.id
             });
         }
@@ -230,24 +322,10 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
     hook: 'orange',
     outro: 'gray',
   };
-  
-  // Format text with sections highlighted
-  const formatTextWithSections = () => {
-    const content = currentContent;
-    const sectionRegex = /\[(.*?)\]/g;
-    
-    let formattedContent = content.replace(sectionRegex, (match, sectionType) => {
-      const type = sectionType.toLowerCase();
-      const color = sectionColors[type] || 'blue';
-      return `<div class="section-marker ${color}">${sectionType}</div>`;
-    });
-    
-    return formattedContent;
-  };
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Title input */}
+      {/* Title input and actions */}
       <div className="mb-4 flex justify-between items-center">
         <input
           type="text"
@@ -257,61 +335,112 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
           className="w-full text-2xl font-heading font-semibold bg-transparent border-0 p-2 focus:outline-none focus:ring-0"
         />
         
-        {noteId && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cette action ne peut pas être annulée. Cette note et tout son contenu seront définitivement supprimés.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleDeleteNote}
-                  className="bg-red-500 hover:bg-red-600"
-                >
-                  {deleting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Suppression...
-                    </>
-                  ) : (
-                    'Supprimer la note'
-                  )}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Folder dropdown */}
+          {noteId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Folder className="h-4 w-4 mr-2" />
+                  Dossiers
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {folders.length === 0 ? (
+                  <div className="px-2 py-1 text-sm text-muted-foreground">
+                    Aucun dossier disponible
+                  </div>
+                ) : (
+                  folders.map((folder) => {
+                    const isInFolder = noteFolders.includes(folder.id);
+                    return (
+                      <DropdownMenuItem
+                        key={folder.id}
+                        onClick={() => handleAddToFolder(folder.id)}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className={cn(
+                              "w-3 h-3 rounded-full",
+                              `bg-${folder.color}-500`
+                            )} 
+                          />
+                          <span>{folder.name}</span>
+                        </div>
+                        {isInFolder && (
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {noteId && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action ne peut pas être annulée. Cette note et tout son contenu seront définitivement supprimés.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleDeleteNote}
+                    className="bg-red-500 hover:bg-red-600"
+                  >
+                    {deleting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Suppression...
+                      </>
+                    ) : (
+                      'Supprimer la note'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
 
       {/* Beat player */}
       {selectedBeat && (
-        <div className="mb-4">
+        <div className="mb-4 p-4 border rounded-lg bg-accent/50">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-medium">Beat associé: {selectedBeat.title}</h3>
+            <h3 className="text-lg font-medium flex items-center">
+              <Music className="h-5 w-5 mr-2 text-primary" />
+              Beat: {selectedBeat.title}
+            </h3>
           </div>
-          <AudioPlayer 
-            audioSrc={selectedBeat.audio_url}
-          />
+          <audio 
+            controls 
+            src={selectedBeat.audio_url}
+            className="w-full"
+          >
+            Votre navigateur ne supporte pas l'élément audio.
+          </audio>
         </div>
       )}
 
       {/* Editor tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'write' | 'record' | 'beats' | 'folders')} className="flex-1">
-        <TabsList className="grid w-full grid-cols-4">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'write' | 'record' | 'beats')} className="flex-1">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="write">Écrire</TabsTrigger>
           <TabsTrigger value="record">Enregistrements</TabsTrigger>
           <TabsTrigger value="beats">Beat</TabsTrigger>
-          <TabsTrigger value="folders">Dossiers</TabsTrigger>
         </TabsList>
         
         <TabsContent value="write" className="flex flex-col space-y-4">
@@ -382,29 +511,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', cla
               noteId={noteId} 
               initialBeatId={selectedBeatId || undefined}
               onBeatSelected={(beatId) => setSelectedBeatId(beatId)}
-            />
-          )}
-          
-          <Button
-            onClick={handleSave}
-            disabled={!title.trim() || saving}
-            className="float-right"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sauvegarde...
-              </>
-            ) : (
-              'Enregistrer la note'
-            )}
-          </Button>
-        </TabsContent>
-
-        <TabsContent value="folders" className="space-y-4">
-          {noteId && (
-            <FolderSelector 
-              noteId={noteId}
             />
           )}
           
