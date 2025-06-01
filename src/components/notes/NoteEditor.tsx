@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, BookText, Mic, Music, ArrowLeft, Trash2 } from 'lucide-react';
+import { Save, BookText, Mic, Music, ArrowLeft, Trash2, Folder } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +13,14 @@ import { NoteSections, SectionType } from './NoteSections';
 import { LyricsSuggestions } from './LyricsSuggestions';
 import { VoiceRecordingsList } from '@/components/audio/VoiceRecordingsList';
 import { BeatSelector } from './BeatSelector';
-import { FolderSelector } from './FolderSelector';
+import { AudioPlayer } from '@/components/audio/AudioPlayer';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,18 +50,36 @@ interface Note {
   updated_at: string;
 }
 
+interface Beat {
+  id: string;
+  title: string;
+  audio_url: string;
+}
+
+interface Folder {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onSave, onDelete, onClose }: NoteEditorProps) {
   const [note, setNote] = useState<Note | null>(null);
   const [title, setTitle] = useState(initialTitle);
   const [content, setContent] = useState(initialContent);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedBeat, setSelectedBeat] = useState<Beat | null>(null);
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [selectedFolderIds, setSelectedFolderIds] = useState<string[]>([]);
   const { user } = useAuth();
 
   useEffect(() => {
     if (noteId) {
       fetchNote();
+      fetchNoteFolders();
+      fetchNoteBeat();
     }
+    fetchFolders();
   }, [noteId]);
 
   useEffect(() => {
@@ -84,6 +109,71 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
       toast.error('Erreur lors du chargement de la note');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchFolders = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('folders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('name');
+      
+      if (error) throw error;
+      
+      setFolders(data || []);
+    } catch (error: any) {
+      console.error('Error fetching folders:', error);
+    }
+  };
+
+  const fetchNoteFolders = async () => {
+    if (!noteId || !user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('folder_items')
+        .select('folder_id')
+        .eq('item_id', noteId)
+        .eq('item_type', 'note');
+        
+      if (error) throw error;
+      
+      const folderIds = data.map(item => item.folder_id);
+      setSelectedFolderIds(folderIds);
+    } catch (error: any) {
+      console.error('Error fetching note folders:', error);
+    }
+  };
+
+  const fetchNoteBeat = async () => {
+    if (!noteId || !user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('note_beats')
+        .select(`
+          beat_id,
+          beats (
+            id,
+            title,
+            audio_url
+          )
+        `)
+        .eq('note_id', noteId)
+        .eq('is_primary', true)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.beats) {
+        setSelectedBeat(data.beats as Beat);
+      }
+    } catch (error: any) {
+      console.error('Error fetching note beat:', error);
     }
   };
 
@@ -175,6 +265,47 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
   const handleBeatSelected = (beatId: string | null) => {
     if (beatId) {
       toast.success('Beat sélectionné pour cette note!');
+      fetchNoteBeat(); // Refresh the selected beat
+    }
+  };
+
+  const handleFolderToggle = async (folderId: string) => {
+    if (!noteId || !user) return;
+    
+    try {
+      const isAlreadyInFolder = selectedFolderIds.includes(folderId);
+      
+      if (isAlreadyInFolder) {
+        // Remove from folder
+        const { error } = await supabase
+          .from('folder_items')
+          .delete()
+          .eq('folder_id', folderId)
+          .eq('item_id', noteId)
+          .eq('item_type', 'note');
+          
+        if (error) throw error;
+        
+        setSelectedFolderIds(prev => prev.filter(id => id !== folderId));
+        toast.success('Note retirée du dossier');
+      } else {
+        // Add to folder
+        const { error } = await supabase
+          .from('folder_items')
+          .insert({
+            folder_id: folderId,
+            item_id: noteId,
+            item_type: 'note'
+          });
+          
+        if (error) throw error;
+        
+        setSelectedFolderIds(prev => [...prev, folderId]);
+        toast.success('Note ajoutée au dossier');
+      }
+    } catch (error: any) {
+      console.error('Error updating folder:', error);
+      toast.error('Erreur lors de la mise à jour du dossier');
     }
   };
 
@@ -243,22 +374,64 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
         </div>
       </div>
 
-      {/* Beat selector at the top */}
-      <div className="border rounded-lg p-4 bg-background/50">
-        <BeatSelector 
-          noteId={noteId}
-          onBeatSelected={handleBeatSelected}
-        />
-      </div>
-
-      {/* Folder selector */}
-      {noteId && (
+      {/* Beat player section */}
+      {selectedBeat && (
         <div className="border rounded-lg p-4 bg-background/50">
-          <FolderSelector noteId={noteId} />
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Music className="h-4 w-4 text-primary" />
+              <span className="font-medium">Beat principal: {selectedBeat.title}</span>
+            </div>
+          </div>
+          <AudioPlayer audioSrc={selectedBeat.audio_url} />
         </div>
       )}
 
-      {/* Main content area - full width */}
+      {/* Folder selector dropdown */}
+      {noteId && folders.length > 0 && (
+        <div className="border rounded-lg p-4 bg-background/50">
+          <div className="flex items-center gap-4">
+            <Folder className="h-4 w-4 text-primary" />
+            <Label className="font-medium">Dossiers :</Label>
+            <Select onValueChange={handleFolderToggle}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Ajouter/retirer d'un dossier..." />
+              </SelectTrigger>
+              <SelectContent>
+                {folders.map((folder) => (
+                  <SelectItem key={folder.id} value={folder.id}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full bg-${folder.color}-500`} />
+                      {folder.name}
+                      {selectedFolderIds.includes(folder.id) && " ✓"}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedFolderIds.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedFolderIds.map(id => {
+                const folder = folders.find(f => f.id === id);
+                if (!folder) return null;
+                
+                return (
+                  <div 
+                    key={folder.id}
+                    className={`rounded-full px-3 py-1 text-sm flex items-center gap-1 bg-${folder.color}-100 text-${folder.color}-800 dark:bg-${folder.color}-900/30 dark:text-${folder.color}-300`}
+                  >
+                    <div className={`w-2 h-2 rounded-full bg-${folder.color}-500`} />
+                    {folder.name}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main content area */}
       <div className="w-full">
         <Tabs defaultValue="notes" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
@@ -331,10 +504,10 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
           </TabsContent>
           
           <TabsContent value="beats" className="mt-4">
-            <div className="text-center py-8 text-muted-foreground">
-              <Music className="h-12 w-12 mx-auto mb-2 opacity-20" />
-              <p>Gestion des beats disponible en haut de page</p>
-            </div>
+            <BeatSelector 
+              noteId={noteId}
+              onBeatSelected={handleBeatSelected}
+            />
           </TabsContent>
         </Tabs>
       </div>
