@@ -190,9 +190,9 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen space-y-6">
       {/* Header with actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <Button 
             variant="ghost" 
@@ -258,98 +258,85 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main content area */}
-        <div className="lg:col-span-3">
-          <Tabs defaultValue="notes" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="notes" className="flex items-center gap-2">
-                <BookText className="h-4 w-4" />
-                Notes
-              </TabsTrigger>
-              <TabsTrigger value="recording" className="flex items-center gap-2">
-                <Mic className="h-4 w-4" />
-                Enregistrement
-              </TabsTrigger>
-              <TabsTrigger value="beats" className="flex items-center gap-2">
-                <Music className="h-4 w-4" />
-                Beats
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="notes" className="mt-4 space-y-4">
+      {/* Main content area - full width */}
+      <div className="w-full">
+        <Tabs defaultValue="notes" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="notes" className="flex items-center gap-2">
+              <BookText className="h-4 w-4" />
+              Notes
+            </TabsTrigger>
+            <TabsTrigger value="recording" className="flex items-center gap-2">
+              <Mic className="h-4 w-4" />
+              Enregistrement
+            </TabsTrigger>
+            <TabsTrigger value="beats" className="flex items-center gap-2">
+              <Music className="h-4 w-4" />
+              Beats
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="notes" className="mt-4 space-y-4">
+            <div>
+              <Label htmlFor="title">Titre</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Titre de votre chanson..."
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="content">Paroles</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Écrivez vos paroles ici..."
+                className="mt-1 min-h-[400px] resize-none"
+                rows={20}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="title">Titre</Label>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Titre de votre chanson..."
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="content">Paroles</Label>
-                <Textarea
-                  id="content"
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  placeholder="Écrivez vos paroles ici..."
-                  className="mt-1 min-h-[400px] resize-none"
-                  rows={20}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Sections</Label>
-                  <div className="mt-2">
-                    <NoteSections onAddSection={addSection} />
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Assistant IA</Label>
-                  <div className="mt-2">
-                    <LyricsSuggestions 
-                      currentText={content}
-                      onSuggestionSelect={handleSuggestionSelect}
-                      context={title}
-                    />
-                  </div>
+                <Label>Sections</Label>
+                <div className="mt-2">
+                  <NoteSections onAddSection={addSection} />
                 </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="recording" className="mt-4">
-              <div className="text-center py-8 text-muted-foreground">
-                <Mic className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>Fonctionnalité d'enregistrement disponible dans la barre latérale</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="beats" className="mt-4">
-              <div className="text-center py-8 text-muted-foreground">
-                <Music className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                <p>Gestion des beats disponible en haut de page</p>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
 
-        {/* Sidebar with voice recordings */}
-        <div className="lg:col-span-1">
-          <div className="border rounded-lg p-4 bg-background/50 sticky top-4">
+              <div>
+                <Label>Assistant IA</Label>
+                <div className="mt-2">
+                  <LyricsSuggestions 
+                    currentText={content}
+                    onSuggestionSelect={handleSuggestionSelect}
+                    context={title}
+                  />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="recording" className="mt-4">
             <VoiceRecordingsList 
               noteId={noteId}
               onRecordingAdded={() => {
-                // Refresh or handle new recording
                 toast.success('Nouvel enregistrement disponible!');
               }}
             />
-          </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="beats" className="mt-4">
+            <div className="text-center py-8 text-muted-foreground">
+              <Music className="h-12 w-12 mx-auto mb-2 opacity-20" />
+              <p>Gestion des beats disponible en haut de page</p>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
