@@ -1,10 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, ArrowLeft, BookText, Mic, Music } from 'lucide-react';
+import { Save, BookText, Mic, Music } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -161,16 +162,23 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
 
   return (
     <div className="space-y-4">
-      {onClose && (
-        <div className="flex items-center justify-between">
-          <Button 
-            variant="ghost" 
-            onClick={onClose}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour
-          </Button>
+      <Tabs defaultValue="notes" className="w-full">
+        <div className="flex items-center justify-between mb-4">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="notes" className="flex items-center gap-2">
+              <BookText className="h-4 w-4" />
+              Notes
+            </TabsTrigger>
+            <TabsTrigger value="recording" className="flex items-center gap-2">
+              <Mic className="h-4 w-4" />
+              Enregistrement
+            </TabsTrigger>
+            <TabsTrigger value="beats" className="flex items-center gap-2">
+              <Music className="h-4 w-4" />
+              Beats
+            </TabsTrigger>
+          </TabsList>
+          
           <Button 
             onClick={handleSave} 
             disabled={saving || !title.trim()}
@@ -180,23 +188,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
             {saving ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
         </div>
-      )}
-
-      <Tabs defaultValue="notes" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="notes" className="flex items-center gap-2">
-            <BookText className="h-4 w-4" />
-            Notes
-          </TabsTrigger>
-          <TabsTrigger value="recording" className="flex items-center gap-2">
-            <Mic className="h-4 w-4" />
-            Enregistrement
-          </TabsTrigger>
-          <TabsTrigger value="beats" className="flex items-center gap-2">
-            <Music className="h-4 w-4" />
-            Beats
-          </TabsTrigger>
-        </TabsList>
         
         <TabsContent value="notes" className="mt-4 space-y-4">
           <div>
@@ -241,26 +232,13 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
               </div>
             </div>
           </div>
-
-          {!onClose && (
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleSave} 
-                disabled={saving || !title.trim()}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-              </Button>
-            </div>
-          )}
         </TabsContent>
         
         <TabsContent value="recording" className="mt-4 space-y-4">
           <div>
-            <Label htmlFor="title">Titre</Label>
+            <Label htmlFor="title-recording">Titre</Label>
             <Input
-              id="title"
+              id="title-recording"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Titre de votre chanson..."
@@ -269,9 +247,9 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
           </div>
 
           <div>
-            <Label htmlFor="content">Paroles</Label>
+            <Label htmlFor="content-recording">Paroles</Label>
             <Textarea
-              id="content"
+              id="content-recording"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Écrivez vos paroles ici..."
@@ -289,26 +267,13 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
               />
             </div>
           </div>
-
-          {!onClose && (
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleSave} 
-                disabled={saving || !title.trim()}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-              </Button>
-            </div>
-          )}
         </TabsContent>
         
         <TabsContent value="beats" className="mt-4 space-y-4">
           <div>
-            <Label htmlFor="title">Titre</Label>
+            <Label htmlFor="title-beats">Titre</Label>
             <Input
-              id="title"
+              id="title-beats"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Titre de votre chanson..."
@@ -317,9 +282,9 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
           </div>
 
           <div>
-            <Label htmlFor="content">Paroles</Label>
+            <Label htmlFor="content-beats">Paroles</Label>
             <Textarea
-              id="content"
+              id="content-beats"
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder="Écrivez vos paroles ici..."
@@ -334,23 +299,9 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
               <BeatSelector 
                 noteId={noteId}
                 onBeatSelected={handleBeatSelected}
-                selectedBeatId={null}
               />
             </div>
           </div>
-
-          {!onClose && (
-            <div className="flex justify-end">
-              <Button 
-                onClick={handleSave} 
-                disabled={saving || !title.trim()}
-                className="flex items-center gap-2"
-              >
-                <Save className="h-4 w-4" />
-                {saving ? 'Sauvegarde...' : 'Sauvegarder'}
-              </Button>
-            </div>
-          )}
         </TabsContent>
       </Tabs>
     </div>
