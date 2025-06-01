@@ -5,14 +5,26 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, BookText, Mic, Music } from 'lucide-react';
+import { Save, BookText, Mic, Music, ArrowLeft, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { NoteSections, SectionType } from './NoteSections';
 import { LyricsSuggestions } from './LyricsSuggestions';
-import { VoiceRecorder } from '@/components/audio/VoiceRecorder';
+import { VoiceRecordingsList } from '@/components/audio/VoiceRecordingsList';
 import { BeatSelector } from './BeatSelector';
+import { FolderSelector } from './FolderSelector';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface NoteEditorProps {
   noteId?: string;
@@ -123,6 +135,27 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
     }
   };
 
+  const handleDelete = async () => {
+    if (!noteId || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('id', noteId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Note supprimée avec succès!');
+      onDelete?.();
+      onClose?.();
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
   const addSection = (sectionType: SectionType) => {
     const sectionText = `\n\n[${sectionType.toUpperCase()}]\n`;
     setContent(prev => prev + sectionText);
@@ -137,10 +170,6 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
       }
     });
     toast.success('Suggestion ajoutée!');
-  };
-
-  const handleRecordingComplete = (audioBlob: Blob) => {
-    toast.success('Enregistrement terminé! Vous pouvez l\'ajouter à votre note.');
   };
 
   const handleBeatSelected = (beatId: string | null) => {
@@ -161,149 +190,167 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
   }
 
   return (
-    <div className="space-y-4">
-      <Tabs defaultValue="notes" className="w-full">
-        <div className="flex items-center justify-between mb-4">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
-            <TabsTrigger value="notes" className="flex items-center gap-2">
-              <BookText className="h-4 w-4" />
-              Notes
-            </TabsTrigger>
-            <TabsTrigger value="recording" className="flex items-center gap-2">
-              <Mic className="h-4 w-4" />
-              Enregistrement
-            </TabsTrigger>
-            <TabsTrigger value="beats" className="flex items-center gap-2">
-              <Music className="h-4 w-4" />
-              Beats
-            </TabsTrigger>
-          </TabsList>
+    <div className="space-y-6">
+      {/* Header with actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={onClose}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-xl font-semibold">
+            {noteId ? 'Modifier la note' : 'Nouvelle note'}
+          </h1>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {noteId && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Supprimer
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Cette action ne peut pas être annulée. Cette note sera supprimée définitivement.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete}>
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           
           <Button 
             onClick={handleSave} 
             disabled={saving || !title.trim()}
-            className="flex items-center gap-2"
+            size="sm"
           >
-            <Save className="h-4 w-4" />
+            <Save className="h-4 w-4 mr-1" />
             {saving ? 'Sauvegarde...' : 'Sauvegarder'}
           </Button>
         </div>
-        
-        <TabsContent value="notes" className="mt-4 space-y-4">
-          <div>
-            <Label htmlFor="title">Titre</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titre de votre chanson..."
-              className="mt-1"
-            />
-          </div>
+      </div>
 
-          <div>
-            <Label htmlFor="content">Paroles</Label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Écrivez vos paroles ici..."
-              className="mt-1 min-h-[400px] resize-none"
-              rows={20}
-            />
-          </div>
+      {/* Beat selector at the top */}
+      <div className="border rounded-lg p-4 bg-background/50">
+        <BeatSelector 
+          noteId={noteId}
+          onBeatSelected={handleBeatSelected}
+        />
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Sections</Label>
-              <div className="mt-2">
-                <NoteSections onAddSection={addSection} />
-              </div>
-            </div>
+      {/* Folder selector */}
+      {noteId && (
+        <div className="border rounded-lg p-4 bg-background/50">
+          <FolderSelector noteId={noteId} />
+        </div>
+      )}
 
-            <div>
-              <Label>Assistant IA</Label>
-              <div className="mt-2">
-                <LyricsSuggestions 
-                  currentText={content}
-                  onSuggestionSelect={handleSuggestionSelect}
-                  context={title}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main content area */}
+        <div className="lg:col-span-3">
+          <Tabs defaultValue="notes" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="notes" className="flex items-center gap-2">
+                <BookText className="h-4 w-4" />
+                Notes
+              </TabsTrigger>
+              <TabsTrigger value="recording" className="flex items-center gap-2">
+                <Mic className="h-4 w-4" />
+                Enregistrement
+              </TabsTrigger>
+              <TabsTrigger value="beats" className="flex items-center gap-2">
+                <Music className="h-4 w-4" />
+                Beats
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="notes" className="mt-4 space-y-4">
+              <div>
+                <Label htmlFor="title">Titre</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Titre de votre chanson..."
+                  className="mt-1"
                 />
               </div>
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="recording" className="mt-4 space-y-4">
-          <div>
-            <Label htmlFor="title-recording">Titre</Label>
-            <Input
-              id="title-recording"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titre de votre chanson..."
-              className="mt-1"
+
+              <div>
+                <Label htmlFor="content">Paroles</Label>
+                <Textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Écrivez vos paroles ici..."
+                  className="mt-1 min-h-[400px] resize-none"
+                  rows={20}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Sections</Label>
+                  <div className="mt-2">
+                    <NoteSections onAddSection={addSection} />
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Assistant IA</Label>
+                  <div className="mt-2">
+                    <LyricsSuggestions 
+                      currentText={content}
+                      onSuggestionSelect={handleSuggestionSelect}
+                      context={title}
+                    />
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="recording" className="mt-4">
+              <div className="text-center py-8 text-muted-foreground">
+                <Mic className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                <p>Fonctionnalité d'enregistrement disponible dans la barre latérale</p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="beats" className="mt-4">
+              <div className="text-center py-8 text-muted-foreground">
+                <Music className="h-12 w-12 mx-auto mb-2 opacity-20" />
+                <p>Gestion des beats disponible en haut de page</p>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Sidebar with voice recordings */}
+        <div className="lg:col-span-1">
+          <div className="border rounded-lg p-4 bg-background/50 sticky top-4">
+            <VoiceRecordingsList 
+              noteId={noteId}
+              onRecordingAdded={() => {
+                // Refresh or handle new recording
+                toast.success('Nouvel enregistrement disponible!');
+              }}
             />
           </div>
-
-          <div>
-            <Label htmlFor="content-recording">Paroles</Label>
-            <Textarea
-              id="content-recording"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Écrivez vos paroles ici..."
-              className="mt-1 min-h-[300px] resize-none"
-              rows={15}
-            />
-          </div>
-
-          <div>
-            <Label>Enregistrement vocal</Label>
-            <div className="mt-2">
-              <VoiceRecorder 
-                onRecordingComplete={handleRecordingComplete}
-                className="border rounded-lg p-4 bg-background/50" 
-              />
-            </div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="beats" className="mt-4 space-y-4">
-          <div>
-            <Label htmlFor="title-beats">Titre</Label>
-            <Input
-              id="title-beats"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Titre de votre chanson..."
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="content-beats">Paroles</Label>
-            <Textarea
-              id="content-beats"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Écrivez vos paroles ici..."
-              className="mt-1 min-h-[300px] resize-none"
-              rows={15}
-            />
-          </div>
-
-          <div>
-            <Label>Sélectionner un beat</Label>
-            <div className="mt-2">
-              <BeatSelector 
-                noteId={noteId}
-                onBeatSelected={handleBeatSelected}
-              />
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
