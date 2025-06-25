@@ -1,10 +1,22 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, BookText, Mic, Music, ArrowLeft, Trash2, Folder, Play, Pause, X } from 'lucide-react';
+import { 
+  Save, 
+  ArrowLeft, 
+  Trash2, 
+  Music, 
+  Mic, 
+  FileText, 
+  Play, 
+  Pause, 
+  X,
+  ChevronDown,
+  Folder,
+  Plus
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,7 +45,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -78,7 +89,7 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
   const [allBeats, setAllBeats] = useState<Beat[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolderIds, setSelectedFolderIds] = useState<string[]>([]);
-  const [activeSection, setActiveSection] = useState<'notes' | 'beats' | 'recordings'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'beats' | 'recordings'>('notes');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -376,308 +387,291 @@ export function NoteEditor({ noteId, initialTitle = '', initialContent = '', onS
     return (
       <div className="flex items-center justify-center h-48">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-muted-foreground">Chargement...</p>
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-2 text-xs text-muted-foreground">Chargement...</p>
         </div>
       </div>
     );
   }
 
+  const tabItems = [
+    { id: 'notes', label: 'Texte', icon: FileText },
+    { id: 'beats', label: 'Beats', icon: Music },
+    { id: 'recordings', label: 'Audio', icon: Mic },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={onClose}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h1 className="text-xl font-semibold">
-                  {noteId ? 'Modifier la note' : 'Nouvelle note'}
-                </h1>
-                {selectedBeat && (
-                  <p className="text-sm text-muted-foreground">
-                    Beat: {selectedBeat.title}
-                  </p>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {noteId && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive" size="sm">
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Supprimer
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action ne peut pas être annulée. Cette note sera supprimée définitivement.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+      {/* Header moderne et compact */}
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b">
+        <div className="flex items-center justify-between px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div className="flex flex-col">
+              <h1 className="text-sm font-medium leading-tight">
+                {noteId ? 'Modifier' : 'Nouvelle note'}
+              </h1>
+              {selectedBeat && (
+                <p className="text-xs text-muted-foreground">
+                  🎵 {selectedBeat.title}
+                </p>
               )}
-              
-              <Button onClick={handleSave} disabled={saving || !title.trim()} size="sm">
-                <Save className="h-4 w-4 mr-1" />
-                {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            {/* Sélecteur de dossiers compact */}
+            {noteId && folders.length > 0 && (
+              <Select onValueChange={handleFolderToggle}>
+                <SelectTrigger className="h-7 w-7 p-0 border-0">
+                  <Folder className="h-3 w-3" />
+                </SelectTrigger>
+                <SelectContent>
+                  {folders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className={`w-2 h-2 rounded-full bg-${folder.color}-500`} />
+                        {folder.name}
+                        {selectedFolderIds.includes(folder.id) && " ✓"}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {noteId && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-destructive">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Supprimer la note ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est irréversible.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                      Supprimer
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            
+            <Button 
+              onClick={handleSave} 
+              disabled={saving || !title.trim()} 
+              size="sm"
+              className="h-7 px-2 text-xs"
+            >
+              <Save className="h-3 w-3 mr-1" />
+              {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Beat player compact en haut */}
+        {selectedBeat && (
+          <div className="px-3 pb-2">
+            <div className="flex items-center gap-2 bg-primary/5 rounded-lg p-2">
+              <Music className="h-3 w-3 text-primary" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{selectedBeat.title}</p>
+                <div className="mt-1">
+                  <AudioPlayer audioSrc={selectedBeat.audio_url} minimized />
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRemoveBeat}
+                className="h-6 w-6 p-0 text-destructive"
+              >
+                <X className="h-3 w-3" />
               </Button>
             </div>
           </div>
+        )}
+
+        {/* Navigation par onglets stylisée */}
+        <div className="flex border-t bg-muted/30">
+          {tabItems.map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 text-xs font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? 'text-primary bg-background border-b-2 border-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                }`}
+              >
+                <Icon className="h-3 w-3" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Sidebar - Navigation */}
-          <div className="col-span-2">
+      {/* Contenu principal avec espacements réduits */}
+      <div className="p-3 space-y-3">
+        {activeTab === 'notes' && (
+          <div className="space-y-3">
+            {/* Champs de base */}
             <div className="space-y-2">
-              <Button
-                variant={activeSection === 'notes' ? 'default' : 'ghost'}
-                onClick={() => setActiveSection('notes')}
-                className="w-full justify-start"
-              >
-                <BookText className="h-4 w-4 mr-2" />
-                Notes
-              </Button>
-              <Button
-                variant={activeSection === 'beats' ? 'default' : 'ghost'}
-                onClick={() => setActiveSection('beats')}
-                className="w-full justify-start"
-              >
-                <Music className="h-4 w-4 mr-2" />
-                Beats
-              </Button>
-              <Button
-                variant={activeSection === 'recordings' ? 'default' : 'ghost'}
-                onClick={() => setActiveSection('recordings')}
-                className="w-full justify-start"
-              >
-                <Mic className="h-4 w-4 mr-2" />
-                Enregistrements
-              </Button>
+              <Label htmlFor="title" className="text-xs font-medium">Titre</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Titre de votre chanson..."
+                className="text-sm"
+              />
             </div>
 
-            {/* Beat Player */}
-            {selectedBeat && (
-              <Card className="mt-6">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <span className="flex items-center gap-2">
-                      <Music className="h-4 w-4" />
-                      Beat principal
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRemoveBeat}
-                      className="h-6 w-6 p-0 text-destructive"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {selectedBeat.title}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <AudioPlayer audioSrc={selectedBeat.audio_url} minimized />
-                </CardContent>
-              </Card>
-            )}
+            <div className="space-y-2">
+              <Label htmlFor="content" className="text-xs font-medium">Paroles</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Écrivez vos paroles ici..."
+                className="min-h-[250px] text-sm resize-none"
+                rows={12}
+              />
+            </div>
 
-            {/* Folders */}
-            {noteId && folders.length > 0 && (
-              <Card className="mt-6">
+            {/* Sections et IA dans des cartes compactes */}
+            <div className="grid gap-3 md:grid-cols-2">
+              <Card className="border-0 bg-muted/30">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
-                    <Folder className="h-4 w-4" />
-                    Dossiers
+                    <Plus className="h-3 w-3" />
+                    Sections
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <Select onValueChange={handleFolderToggle}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue placeholder="Gérer les dossiers..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {folders.map((folder) => (
-                        <SelectItem key={folder.id} value={folder.id}>
-                          <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full bg-${folder.color}-500`} />
-                            {folder.name}
-                            {selectedFolderIds.includes(folder.id) && " ✓"}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {selectedFolderIds.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {selectedFolderIds.map(id => {
-                        const folder = folders.find(f => f.id === id);
-                        if (!folder) return null;
-                        
-                        return (
-                          <Badge key={folder.id} variant="secondary" className="text-xs">
-                            {folder.name}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  )}
+                  <NoteSections onAddSection={addSection} />
                 </CardContent>
               </Card>
-            )}
-          </div>
 
-          {/* Main Content Area */}
-          <div className="col-span-10">
-            {activeSection === 'notes' && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Informations de la note</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="title">Titre</Label>
-                      <Input
-                        id="title"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Titre de votre chanson..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="content">Paroles</Label>
-                      <Textarea
-                        id="content"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        placeholder="Écrivez vos paroles ici..."
-                        className="mt-1 min-h-[400px] resize-none"
-                        rows={20}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Sections</CardTitle>
-                      <CardDescription>Ajoutez des sections à vos paroles</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <NoteSections onAddSection={addSection} />
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Assistant IA</CardTitle>
-                      <CardDescription>Suggestions pour compléter vos paroles</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <LyricsSuggestions 
-                        currentText={content}
-                        onSuggestionSelect={handleSuggestionSelect}
-                        context={title}
-                      />
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            )}
-
-            {activeSection === 'beats' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Gestion des beats</CardTitle>
-                  <CardDescription>Sélectionnez un beat pour accompagner votre note</CardDescription>
+              <Card className="border-0 bg-muted/30">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    ✨ Assistant IA
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  {allBeats.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Music className="h-12 w-12 mx-auto mb-2 opacity-20" />
-                      <p>Aucun beat disponible</p>
-                    </div>
-                  ) : (
-                    <div className="grid gap-4">
-                      {allBeats.map((beat) => (
-                        <div 
-                          key={beat.id}
-                          className={`border rounded-lg p-4 ${
-                            selectedBeat?.id === beat.id 
-                              ? 'border-primary bg-primary/5' 
-                              : 'border-border hover:border-primary/50'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="font-medium">{beat.title}</div>
-                            <div className="flex gap-2">
-                              {selectedBeat?.id === beat.id ? (
-                                <Button 
-                                  size="sm" 
-                                  variant="destructive"
-                                  onClick={handleRemoveBeat}
-                                >
-                                  Retirer
-                                </Button>
-                              ) : (
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => handleBeatSelect(beat.id)}
-                                >
-                                  Sélectionner
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                          <AudioPlayer audioSrc={beat.audio_url} />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {activeSection === 'recordings' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Enregistrements vocaux</CardTitle>
-                  <CardDescription>Gérez vos enregistrements vocaux pour cette note</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <VoiceRecordingsList 
-                    noteId={noteId}
-                    onRecordingAdded={() => {
-                      toast.success('Nouvel enregistrement disponible!');
-                    }}
+                <CardContent className="pt-0">
+                  <LyricsSuggestions 
+                    currentText={content}
+                    onSuggestionSelect={handleSuggestionSelect}
+                    context={title}
                   />
                 </CardContent>
               </Card>
+            </div>
+
+            {/* Dossiers sélectionnés */}
+            {selectedFolderIds.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Dossiers</Label>
+                <div className="flex flex-wrap gap-1">
+                  {selectedFolderIds.map(id => {
+                    const folder = folders.find(f => f.id === id);
+                    if (!folder) return null;
+                    
+                    return (
+                      <Badge key={folder.id} variant="secondary" className="text-xs h-5">
+                        <div className={`w-2 h-2 rounded-full bg-${folder.color}-500 mr-1`} />
+                        {folder.name}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
-        </div>
+        )}
+
+        {activeTab === 'beats' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <Music className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-medium">Sélectionner un beat</h2>
+            </div>
+            
+            {allBeats.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Music className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">Aucun beat disponible</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {allBeats.map((beat) => (
+                  <div 
+                    key={beat.id}
+                    className={`border rounded-lg p-3 transition-colors ${
+                      selectedBeat?.id === beat.id 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-sm font-medium truncate flex-1 mr-2">{beat.title}</div>
+                      <div className="flex gap-1">
+                        {selectedBeat?.id === beat.id ? (
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={handleRemoveBeat}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Retirer
+                          </Button>
+                        ) : (
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleBeatSelect(beat.id)}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Sélectionner
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <AudioPlayer audioSrc={beat.audio_url} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'recordings' && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-3">
+              <Mic className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-medium">Enregistrements vocaux</h2>
+            </div>
+            
+            <VoiceRecordingsList 
+              noteId={noteId}
+              onRecordingAdded={() => {
+                toast.success('Nouvel enregistrement disponible!');
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
