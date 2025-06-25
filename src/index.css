@@ -14,7 +14,7 @@
     --popover: 255 255 255;
     --popover-foreground: 30 41 59;
 
-    --primary: 139 92 246;
+    --primary: 59 130 246;
     --primary-foreground: 255 255 255;
 
     --secondary: 241 245 249;
@@ -23,36 +23,26 @@
     --muted: 248 250 252;
     --muted-foreground: 100 116 139;
 
-    --accent: 236 254 255;
-    --accent-foreground: 14 165 233;
+    --accent: 239 246 255;
+    --accent-foreground: 37 99 235;
 
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
 
     --border: 226 232 240;
     --input: 226 232 240;
-    --ring: 139 92 246;
+    --ring: 59 130 246;
 
     --radius: 0.75rem;
 
     --sidebar-background: 255 255 255;
     --sidebar-foreground: 30 41 59;
-    --sidebar-primary: 139 92 246;
+    --sidebar-primary: 59 130 246;
     --sidebar-primary-foreground: 255 255 255;
     --sidebar-accent: 241 245 249;
     --sidebar-accent-foreground: 71 85 105;
     --sidebar-border: 226 232 240;
-    --sidebar-ring: 139 92 246;
-
-    /* Couleurs musicales calmes et artistiques */
-    --music-purple: 124 58 237;
-    --music-violet: 139 92 246;
-    --music-pink: 219 39 119;
-    --music-rose: 244 63 94;
-    --music-teal: 20 184 166;
-    --music-cyan: 6 182 212;
-    --music-slate: 71 85 105;
-    --music-gray: 107 114 128;
+    --sidebar-ring: 59 130 246;
   }
 
   .dark {
@@ -65,7 +55,7 @@
     --popover: 30 41 59;
     --popover-foreground: 248 250 252;
 
-    --primary: 147 51 234;
+    --primary: 99 102 241;
     --primary-foreground: 248 250 252;
 
     --secondary: 51 65 85;
@@ -82,26 +72,16 @@
 
     --border: 71 85 105;
     --input: 71 85 105;
-    --ring: 147 51 234;
+    --ring: 99 102 241;
 
     --sidebar-background: 30 41 59;
     --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 147 51 234;
+    --sidebar-primary: 99 102 241;
     --sidebar-primary-foreground: 248 250 252;
     --sidebar-accent: 51 65 85;
     --sidebar-accent-foreground: 248 250 252;
     --sidebar-border: 71 85 105;
-    --sidebar-ring: 147 51 234;
-
-    /* Couleurs musicales dark */
-    --music-purple: 147 51 234;
-    --music-violet: 167 139 250;
-    --music-pink: 244 114 182;
-    --music-rose: 251 113 133;
-    --music-teal: 45 212 191;
-    --music-cyan: 34 211 238;
-    --music-slate: 148 163 184;
-    --music-gray: 156 163 175;
+    --sidebar-ring: 99 102 241;
   }
 }
 
@@ -126,24 +106,24 @@
 
 @layer utilities {
   .note-card {
-    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 
-           hover:shadow-lg hover:border-violet-300 dark:hover:border-violet-600 
-           transition-all duration-300 cursor-pointer overflow-hidden;
+    @apply bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 
+           hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 
+           transition-all duration-200 cursor-pointer overflow-hidden;
   }
   
   .note-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
   
   .glass-card {
-    @apply backdrop-blur-lg bg-white/90 dark:bg-slate-900/90 
-           border border-slate-200/50 dark:border-slate-700/50 
-           rounded-2xl shadow-xl;
+    @apply backdrop-blur-sm bg-white/95 dark:bg-slate-900/95 
+           border border-slate-200/80 dark:border-slate-700/80 
+           rounded-xl shadow-lg;
   }
   
   .floating-header {
-    @apply sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 
-           border-b border-slate-200/50 dark:border-slate-700/50;
+    @apply sticky top-0 z-50 backdrop-blur-md bg-white/90 dark:bg-slate-900/90 
+           border-b border-slate-200/60 dark:border-slate-700/60;
   }
   
   .modern-sidebar {
@@ -151,56 +131,54 @@
   }
   
   .nav-link {
-    @apply flex items-center gap-2 px-2 py-2 sm:gap-3 sm:px-3 sm:py-2 rounded-xl text-slate-700 dark:text-slate-300 
-           hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300
-           transition-all duration-200 font-medium text-xs sm:text-sm;
+    @apply flex items-center gap-2 px-3 py-2 rounded-lg text-slate-700 dark:text-slate-300 
+           hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300
+           transition-all duration-200 font-medium text-sm;
   }
   
   .nav-link-active {
-    @apply bg-gradient-to-r from-violet-50 to-pink-50 dark:from-violet-900/20 dark:to-pink-900/20 
-           text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-800;
+    @apply bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 
+           border border-blue-200 dark:border-blue-800;
   }
   
   .modern-input {
     @apply bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 
-           rounded-xl px-3 py-2 focus:ring-2 focus:ring-violet-500 focus:border-transparent
+           rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent
            transition-all duration-200 text-sm;
   }
   
   .modern-button {
-    @apply bg-gradient-to-r from-violet-500 to-pink-600 hover:from-violet-600 hover:to-pink-700 
-           text-white font-medium px-3 py-2 sm:px-4 sm:py-2
-           rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl
-           active:scale-95 text-xs sm:text-sm;
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2
+           rounded-lg transition-all duration-200 shadow-sm hover:shadow-md
+           active:scale-95 text-sm;
   }
   
   .modern-button-secondary {
     @apply bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 
-           text-slate-700 dark:text-slate-300 font-medium px-3 py-2 sm:px-4 sm:py-2
-           rounded-xl transition-all duration-200 border border-slate-200 dark:border-slate-700
-           text-xs sm:text-sm;
+           text-slate-700 dark:text-slate-300 font-medium px-4 py-2
+           rounded-lg transition-all duration-200 border border-slate-200 dark:border-slate-700
+           text-sm;
   }
   
   .editor-toolbar {
-    @apply flex items-center gap-1 p-2 sm:gap-2 sm:p-3 bg-slate-50 dark:bg-slate-800 
-           border-b border-slate-200 dark:border-slate-700 rounded-t-xl;
+    @apply flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 
+           border-b border-slate-200 dark:border-slate-700 rounded-t-lg;
   }
   
   .toolbar-button {
     @apply px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 
            hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 
-           rounded-lg transition-all duration-200;
+           rounded-md transition-all duration-200;
   }
   
   .masonry-grid {
     column-count: 1;
-    column-gap: 0.75rem;
+    column-gap: 1rem;
   }
   
   @media (min-width: 640px) {
     .masonry-grid {
       column-count: 2;
-      column-gap: 1rem;
     }
   }
   
@@ -218,31 +196,8 @@
   
   .masonry-item {
     break-inside: avoid;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
   }
-
-  @media (min-width: 640px) {
-    .masonry-item {
-      margin-bottom: 1rem;
-    }
-  }
-
-  /* Couleurs musicales harmonieuses */
-  .music-purple { @apply text-violet-600 dark:text-violet-400; }
-  .music-violet { @apply text-purple-600 dark:text-purple-400; }
-  .music-pink { @apply text-pink-600 dark:text-pink-400; }
-  .music-rose { @apply text-rose-600 dark:text-rose-400; }
-  .music-teal { @apply text-teal-600 dark:text-teal-400; }
-  .music-cyan { @apply text-cyan-600 dark:text-cyan-400; }
-  .music-slate { @apply text-slate-600 dark:text-slate-400; }
-
-  .bg-music-purple { @apply bg-violet-500; }
-  .bg-music-violet { @apply bg-purple-500; }
-  .bg-music-pink { @apply bg-pink-500; }
-  .bg-music-rose { @apply bg-rose-500; }
-  .bg-music-teal { @apply bg-teal-500; }
-  .bg-music-cyan { @apply bg-cyan-500; }
-  .bg-music-slate { @apply bg-slate-500; }
 
   /* Mobile optimizations */
   @media (max-width: 640px) {
@@ -251,19 +206,19 @@
     }
     
     .mobile-subtitle {
-      @apply text-xs;
+      @apply text-xs text-slate-500;
     }
     
     .mobile-button {
-      @apply text-xs px-2 py-1;
+      @apply text-xs px-3 py-1.5;
     }
     
     .mobile-card {
-      @apply p-3 rounded-xl;
+      @apply p-3 rounded-lg;
     }
     
     .mobile-spacing {
-      @apply space-y-2;
+      @apply space-y-3;
     }
     
     .mobile-text {
@@ -272,6 +227,10 @@
     
     .mobile-icon {
       @apply w-4 h-4;
+    }
+    
+    .mobile-compact {
+      @apply gap-2;
     }
   }
 }
