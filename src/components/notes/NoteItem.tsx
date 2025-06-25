@@ -12,6 +12,7 @@ export type Note = {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+  favorite: boolean;
   audioAttached: boolean;
   sections: {
     type: 'verse' | 'chorus' | 'bridge' | 'hook' | 'outro';
