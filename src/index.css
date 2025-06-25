@@ -44,13 +44,15 @@
     --sidebar-border: 226 232 240;
     --sidebar-ring: 139 92 246;
 
-    /* Couleurs musicales */
-    --music-purple: 139 92 246;
-    --music-blue: 59 130 246;
+    /* Couleurs musicales calmes et artistiques */
+    --music-purple: 124 58 237;
+    --music-violet: 139 92 246;
+    --music-pink: 219 39 119;
+    --music-rose: 244 63 94;
     --music-teal: 20 184 166;
-    --music-pink: 236 72 153;
-    --music-orange: 251 146 60;
-    --music-green: 34 197 94;
+    --music-cyan: 6 182 212;
+    --music-slate: 71 85 105;
+    --music-gray: 107 114 128;
   }
 
   .dark {
@@ -93,11 +95,13 @@
 
     /* Couleurs musicales dark */
     --music-purple: 147 51 234;
-    --music-blue: 59 130 246;
-    --music-teal: 45 212 191;
+    --music-violet: 167 139 250;
     --music-pink: 244 114 182;
-    --music-orange: 251 146 60;
-    --music-green: 74 222 128;
+    --music-rose: 251 113 133;
+    --music-teal: 45 212 191;
+    --music-cyan: 34 211 238;
+    --music-slate: 148 163 184;
+    --music-gray: 156 163 175;
   }
 }
 
@@ -147,56 +151,56 @@
   }
   
   .nav-link {
-    @apply flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-slate-700 dark:text-slate-300 
+    @apply flex items-center gap-2 px-2 py-2 sm:gap-3 sm:px-3 sm:py-2 rounded-xl text-slate-700 dark:text-slate-300 
            hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300
-           transition-all duration-200 font-medium text-sm sm:text-base;
+           transition-all duration-200 font-medium text-xs sm:text-sm;
   }
   
   .nav-link-active {
-    @apply bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 
-           border border-violet-200 dark:border-violet-800;
+    @apply bg-gradient-to-r from-violet-50 to-pink-50 dark:from-violet-900/20 dark:to-pink-900/20 
+           text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-800;
   }
   
   .modern-input {
     @apply bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 
-           rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-violet-500 focus:border-transparent
-           transition-all duration-200 text-sm sm:text-base;
+           rounded-xl px-3 py-2 focus:ring-2 focus:ring-violet-500 focus:border-transparent
+           transition-all duration-200 text-sm;
   }
   
   .modern-button {
-    @apply bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 
-           text-white font-medium px-4 py-2 sm:px-6 sm:py-3 
+    @apply bg-gradient-to-r from-violet-500 to-pink-600 hover:from-violet-600 hover:to-pink-700 
+           text-white font-medium px-3 py-2 sm:px-4 sm:py-2
            rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl
-           active:scale-95 text-sm sm:text-base;
+           active:scale-95 text-xs sm:text-sm;
   }
   
   .modern-button-secondary {
     @apply bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 
-           text-slate-700 dark:text-slate-300 font-medium px-4 py-2 sm:px-6 sm:py-3 
+           text-slate-700 dark:text-slate-300 font-medium px-3 py-2 sm:px-4 sm:py-2
            rounded-xl transition-all duration-200 border border-slate-200 dark:border-slate-700
-           text-sm sm:text-base;
+           text-xs sm:text-sm;
   }
   
   .editor-toolbar {
-    @apply flex items-center gap-2 p-2 sm:p-3 bg-slate-50 dark:bg-slate-800 
+    @apply flex items-center gap-1 p-2 sm:gap-2 sm:p-3 bg-slate-50 dark:bg-slate-800 
            border-b border-slate-200 dark:border-slate-700 rounded-t-xl;
   }
   
   .toolbar-button {
-    @apply px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 
+    @apply px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-400 
            hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 
            rounded-lg transition-all duration-200;
   }
   
   .masonry-grid {
     column-count: 1;
-    column-gap: 1rem;
+    column-gap: 0.75rem;
   }
   
   @media (min-width: 640px) {
     .masonry-grid {
       column-count: 2;
-      column-gap: 1.5rem;
+      column-gap: 1rem;
     }
   }
   
@@ -214,23 +218,31 @@
   
   .masonry-item {
     break-inside: avoid;
-    margin-bottom: 1rem sm:margin-bottom: 1.5rem;
+    margin-bottom: 0.75rem;
   }
 
-  /* Couleurs musicales */
-  .music-purple { @apply text-violet-500; }
-  .music-blue { @apply text-blue-500; }
-  .music-teal { @apply text-teal-500; }
-  .music-pink { @apply text-pink-500; }
-  .music-orange { @apply text-orange-400; }
-  .music-green { @apply text-green-500; }
+  @media (min-width: 640px) {
+    .masonry-item {
+      margin-bottom: 1rem;
+    }
+  }
+
+  /* Couleurs musicales harmonieuses */
+  .music-purple { @apply text-violet-600 dark:text-violet-400; }
+  .music-violet { @apply text-purple-600 dark:text-purple-400; }
+  .music-pink { @apply text-pink-600 dark:text-pink-400; }
+  .music-rose { @apply text-rose-600 dark:text-rose-400; }
+  .music-teal { @apply text-teal-600 dark:text-teal-400; }
+  .music-cyan { @apply text-cyan-600 dark:text-cyan-400; }
+  .music-slate { @apply text-slate-600 dark:text-slate-400; }
 
   .bg-music-purple { @apply bg-violet-500; }
-  .bg-music-blue { @apply bg-blue-500; }
-  .bg-music-teal { @apply bg-teal-500; }
+  .bg-music-violet { @apply bg-purple-500; }
   .bg-music-pink { @apply bg-pink-500; }
-  .bg-music-orange { @apply bg-orange-400; }
-  .bg-music-green { @apply bg-green-500; }
+  .bg-music-rose { @apply bg-rose-500; }
+  .bg-music-teal { @apply bg-teal-500; }
+  .bg-music-cyan { @apply bg-cyan-500; }
+  .bg-music-slate { @apply bg-slate-500; }
 
   /* Mobile optimizations */
   @media (max-width: 640px) {
@@ -239,15 +251,27 @@
     }
     
     .mobile-subtitle {
-      @apply text-sm;
+      @apply text-xs;
     }
     
     .mobile-button {
-      @apply text-xs px-3 py-2;
+      @apply text-xs px-2 py-1;
     }
     
     .mobile-card {
       @apply p-3 rounded-xl;
+    }
+    
+    .mobile-spacing {
+      @apply space-y-2;
+    }
+    
+    .mobile-text {
+      @apply text-sm;
+    }
+    
+    .mobile-icon {
+      @apply w-4 h-4;
     }
   }
 }
