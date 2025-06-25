@@ -105,51 +105,98 @@
 }
 
 @layer utilities {
-  .container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  .note-card {
+    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 
+           hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 
+           transition-all duration-300 cursor-pointer overflow-hidden;
   }
   
-  .gradient-border {
-    @apply bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 p-[1px] rounded-xl;
+  .note-card:hover {
+    transform: translateY(-2px);
   }
   
-  .glass-effect {
-    @apply backdrop-blur-xl bg-white/80 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700/50;
+  .glass-card {
+    @apply backdrop-blur-lg bg-white/90 dark:bg-gray-900/90 
+           border border-gray-200/50 dark:border-gray-700/50 
+           rounded-2xl shadow-xl;
   }
-
-  .content-card {
-    @apply bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-200;
+  
+  .floating-header {
+    @apply sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 
+           border-b border-gray-200/50 dark:border-gray-700/50;
   }
-
-  .nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-accent/50 active:scale-95;
+  
+  .modern-sidebar {
+    @apply bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700;
   }
-
-  .nav-item-active {
-    @apply bg-primary text-primary-foreground shadow-sm;
+  
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 
+           hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white
+           transition-all duration-200 font-medium;
   }
-
-  .floating-action {
-    @apply fixed bottom-6 right-6 bg-primary text-primary-foreground rounded-full p-4 shadow-lg hover:shadow-xl transition-all duration-200 active:scale-95 z-50;
+  
+  .nav-link-active {
+    @apply bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 
+           border border-indigo-200 dark:border-indigo-800;
   }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.3s ease-out;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
+  
+  .modern-input {
+    @apply bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 
+           rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+           transition-all duration-200;
+  }
+  
+  .modern-button {
+    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 
+           rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl
+           active:scale-95;
+  }
+  
+  .modern-button-secondary {
+    @apply bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 
+           text-gray-700 dark:text-gray-300 font-medium px-6 py-3 
+           rounded-xl transition-all duration-200 border border-gray-200 dark:border-gray-700;
+  }
+  
+  .editor-toolbar {
+    @apply flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 
+           border-b border-gray-200 dark:border-gray-700 rounded-t-xl;
+  }
+  
+  .toolbar-button {
+    @apply px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 
+           hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 
+           rounded-lg transition-all duration-200;
+  }
+  
+  .masonry-grid {
+    column-count: 1;
+    column-gap: 1.5rem;
+  }
+  
+  @media (min-width: 640px) {
+    .masonry-grid {
+      column-count: 2;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .masonry-grid {
+      column-count: 3;
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    .masonry-grid {
+      column-count: 4;
+    }
+  }
+  
+  .masonry-item {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+  }
 }
 
 #root {

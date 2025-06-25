@@ -1,11 +1,20 @@
 
 import { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
+import { ModernLayout } from '@/components/layout/ModernLayout';
 import { Button } from '@/components/ui/button';
-import { FileText, Plus, Search, Filter, Grid3X3, List, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { NotesGrid } from '@/components/notes/NotesGrid';
-import { NoteEditor } from '@/components/notes/NoteEditor';
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  Grid3X3, 
+  List, 
+  Loader2,
+  StickyNote,
+  Sparkles
+} from 'lucide-react';
+import { ModernNotesGrid } from '@/components/notes/ModernNotesGrid';
+import { ModernNoteEditor } from '@/components/notes/ModernNoteEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -24,7 +33,7 @@ const Notes = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'masonry' | 'grid' | 'list'>('masonry');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -123,142 +132,157 @@ const Notes = () => {
     handleCloseEditor();
   };
 
+  if (isEditorOpen) {
+    return (
+      <ModernNoteEditor 
+        noteId={selectedNote?.id} 
+        initialTitle={selectedNote?.title}
+        initialContent={selectedNote?.content}
+        onSave={refreshNotes}
+        onDelete={handleDeleteNote}
+        onClose={handleCloseEditor}
+      />
+    );
+  }
+
   return (
-    <MainLayout>
-      <div className="container py-6 space-y-6">
-        <AnimatePresence mode="wait">
-          {isEditorOpen ? (
-            <motion.div
-              key="editor"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              <NoteEditor 
-                noteId={selectedNote?.id} 
-                initialTitle={selectedNote?.title}
-                initialContent={selectedNote?.content}
-                onSave={refreshNotes}
-                onDelete={handleDeleteNote}
-                onClose={handleCloseEditor}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="notes"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="space-y-6"
-            >
-              {/* Header moderne */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/20">
-                      <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <h1 className="text-2xl font-bold">Mes Notes</h1>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {notes.length} note{notes.length !== 1 ? 's' : ''} • Dernière modification aujourd'hui
+    <ModernLayout>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
+        {/* Header with stats */}
+        <div className="glass-card p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center">
+                  <StickyNote className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    Mes Notes
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {notes.length} note{notes.length !== 1 ? 's' : ''} • 
+                    Organisez vos idées créatives
                   </p>
                 </div>
-                
-                <Button onClick={handleNewNote} className="gap-2 rounded-lg">
-                  <Plus className="h-4 w-4" />
-                  Nouvelle note
+              </div>
+            </div>
+            
+            <Button 
+              onClick={handleNewNote} 
+              className="modern-button gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Nouvelle note
+            </Button>
+          </div>
+        </div>
+        
+        {/* Search and filters */}
+        <div className="glass-card p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <Input
+                placeholder="Rechercher dans vos notes..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="pl-12 modern-input"
+              />
+            </div>
+            
+            {/* Controls */}
+            <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="w-4 h-4" />
+                    Filtrer
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem>Récentes</DropdownMenuItem>
+                  <DropdownMenuItem>Anciennes</DropdownMenuItem>
+                  <DropdownMenuItem>Avec audio</DropdownMenuItem>
+                  <DropdownMenuItem>Favoris</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* View mode selector */}
+              <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'masonry' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('masonry')}
+                  className="px-3"
+                >
+                  <Sparkles className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="px-3"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="px-3"
+                >
+                  <List className="w-4 h-4" />
                 </Button>
               </div>
-              
-              {/* Barre de recherche et filtres */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher dans vos notes..."
-                    value={searchTerm}
-                    onChange={handleSearch}
-                    className="pl-10 bg-background border-border/50"
-                  />
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Filter className="h-4 w-4" />
-                        Filtrer
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuItem>Récentes</DropdownMenuItem>
-                      <DropdownMenuItem>Anciennes</DropdownMenuItem>
-                      <DropdownMenuItem>Avec audio</DropdownMenuItem>
-                      <DropdownMenuItem>Favoris</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  
-                  <div className="flex rounded-lg border border-border/50 p-1">
-                    <Button
-                      variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewMode('grid')}
-                      className="h-7 w-7 p-0"
-                    >
-                      <Grid3X3 className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-                      size="sm"
-                      onClick={() => setViewMode('list')}
-                      className="h-7 w-7 p-0"
-                    >
-                      <List className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Content */}
+        {loading ? (
+          <div className="glass-card py-20">
+            <div className="flex flex-col items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mb-4" />
+              <p className="text-gray-600 dark:text-gray-400">Chargement de vos notes...</p>
+            </div>
+          </div>
+        ) : filteredNotes.length === 0 ? (
+          <div className="glass-card py-20">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <StickyNote className="w-8 h-8 text-gray-400" />
               </div>
-              
-              {/* Contenu */}
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-                  <p className="text-sm text-muted-foreground">Chargement de vos notes...</p>
-                </div>
-              ) : filteredNotes.length === 0 ? (
-                <div className="content-card text-center py-16">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted mx-auto mb-4">
-                    <FileText className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">
-                    {searchTerm.trim() !== '' ? 'Aucun résultat trouvé' : 'Aucune note trouvée'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
-                    {searchTerm.trim() !== '' 
-                      ? 'Essayez avec des termes différents'
-                      : 'Commencez par créer une nouvelle note pour donner vie à vos idées'}
-                  </p>
-                  {searchTerm.trim() === '' && (
-                    <Button onClick={handleNewNote} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Créer ma première note
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <NotesGrid 
-                  notes={filteredNotes} 
-                  onNoteSelect={handleNoteSelect}
-                />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                {searchTerm.trim() !== '' ? 'Aucun résultat trouvé' : 'Aucune note pour le moment'}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                {searchTerm.trim() !== '' 
+                  ? 'Essayez avec des termes différents ou créez une nouvelle note.'
+                  : 'Commencez par créer votre première note pour organiser vos idées.'}
+              </p>
+              {searchTerm.trim() === '' && (
+                <Button onClick={handleNewNote} className="modern-button gap-2">
+                  <Plus className="w-5 h-5" />
+                  Créer ma première note
+                </Button>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </MainLayout>
+            </div>
+          </div>
+        ) : (
+          <ModernNotesGrid 
+            notes={filteredNotes} 
+            onNoteSelect={handleNoteSelect}
+            viewMode={viewMode}
+          />
+        )}
+      </motion.div>
+    </ModernLayout>
   );
 };
 
