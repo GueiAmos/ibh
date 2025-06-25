@@ -1,117 +1,117 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Note } from './NoteItem';
-import { FileText, Music, Heart, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Music, Heart, Mic } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface ModernNoteCardProps {
   note: Note;
   onClick: () => void;
-  variant?: 'card' | 'list';
+  variant?: 'default' | 'list';
 }
 
-export function ModernNoteCard({ note, onClick, variant = 'card' }: ModernNoteCardProps) {
-  const truncateContent = (content: string, maxLength: number) => {
-    if (content.length <= maxLength) return content;
-    return content.substring(0, maxLength) + '...';
-  };
+export function ModernNoteCard({ note, onClick, variant = 'default' }: ModernNoteCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  
+  const timeAgo = formatDistanceToNow(new Date(note.updatedAt), {
+    addSuffix: true,
+    locale: fr,
+  });
+
+  const previewContent = note.content.replace(/(<([^>]+)>)/gi, "").substring(0, 100);
 
   if (variant === 'list') {
     return (
-      <div
+      <motion.div
+        whileHover={{ scale: 1.01 }}
+        className="note-card p-3 sm:p-4 cursor-pointer"
         onClick={onClick}
-        className="note-card p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl flex items-center justify-center flex-shrink-0">
-          <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-        </div>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-              {note.title}
-            </h3>
-            {note.audioAttached && (
-              <Music className="w-4 h-4 text-purple-500 flex-shrink-0" />
-            )}
-            {note.favorite && (
-              <Heart className="w-4 h-4 text-red-500 flex-shrink-0" />
-            )}
+        <div className="flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                {note.title || "Note sans titre"}
+              </h3>
+              <div className="flex items-center gap-1">
+                {note.audioAttached && (
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-teal-100 dark:bg-teal-900/30">
+                    <Music className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                  </div>
+                )}
+                {note.favorite && (
+                  <div className="flex items-center justify-center w-5 h-5 rounded-full bg-pink-100 dark:bg-pink-900/30">
+                    <Heart className="w-3 h-3 text-pink-600 dark:text-pink-400 fill-current" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+              {previewContent}
+              {previewContent.length >= 100 && "..."}
+            </p>
           </div>
-          
-          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-            {truncateContent(note.content, 100)}
-          </p>
-          
-          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500 dark:text-gray-500">
-            <Clock className="w-3 h-3" />
-            <span>
-              {formatDistanceToNow(note.updatedAt, { addSuffix: true, locale: fr })}
-            </span>
+          <div className="text-xs text-slate-500 dark:text-slate-500 ml-4">
+            {timeAgo}
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
-  // Card variant
-  const contentHeight = Math.max(150, Math.min(300, note.content.length * 0.5 + 150));
-
   return (
-    <div
+    <motion.div
+      whileHover={{ y: -2 }}
+      className={cn(
+        'note-card p-3 sm:p-4 lg:p-5 cursor-pointer h-full transition-all duration-300',
+        isHovered ? 'shadow-xl border-violet-300 dark:border-violet-600' : ''
+      )}
       onClick={onClick}
-      className="note-card p-6"
-      style={{ height: `${contentHeight}px` }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl flex items-center justify-center">
-              <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div className="flex gap-1">
-              {note.audioAttached && (
-                <div className="w-6 h-6 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                  <Music className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                </div>
-              )}
-              {note.favorite && (
-                <div className="w-6 h-6 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-                  <Heart className="w-3 h-3 text-red-600 dark:text-red-400" />
-                </div>
-              )}
-            </div>
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-semibold text-sm sm:text-base lg:text-lg text-slate-900 dark:text-white line-clamp-2 flex-1 pr-2">
+            {note.title || "Note sans titre"}
+          </h3>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {note.audioAttached && (
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500">
+                <Music className="w-3 h-3 text-white" />
+              </div>
+            )}
+            {note.favorite && (
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-pink-400 to-rose-500">
+                <Heart className="w-3 h-3 text-white fill-current" />
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Title */}
-        <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3 line-clamp-2">
-          {note.title}
-        </h3>
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 line-clamp-3 flex-1 mb-3 leading-relaxed">
+          {previewContent}
+          {previewContent.length >= 100 && "..."}
+        </p>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden">
-          <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed line-clamp-6">
-            {note.content}
-          </p>
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-500">
-            <Clock className="w-3 h-3" />
-            <span>
-              {formatDistanceToNow(note.updatedAt, { addSuffix: true, locale: fr })}
-            </span>
-          </div>
-          
-          <div className="text-xs text-gray-400 dark:text-gray-600">
-            {note.content.length} caractères
-          </div>
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-500">
+          <span>Modifié {timeAgo}</span>
+          {isHovered && (
+            <motion.span 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-violet-600 dark:text-violet-400 font-medium"
+            >
+              Cliquer pour éditer
+            </motion.span>
+          )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -5,44 +5,52 @@
 
 @layer base {
   :root {
-    --background: 250 250 250;
-    --foreground: 20 20 20;
+    --background: 248 250 252;
+    --foreground: 30 41 59;
 
     --card: 255 255 255;
-    --card-foreground: 20 20 20;
+    --card-foreground: 30 41 59;
 
     --popover: 255 255 255;
-    --popover-foreground: 20 20 20;
+    --popover-foreground: 30 41 59;
 
-    --primary: 99 102 241;
+    --primary: 139 92 246;
     --primary-foreground: 255 255 255;
 
-    --secondary: 248 250 252;
+    --secondary: 241 245 249;
     --secondary-foreground: 71 85 105;
 
     --muted: 248 250 252;
     --muted-foreground: 100 116 139;
 
-    --accent: 241 245 249;
-    --accent-foreground: 15 23 42;
+    --accent: 236 254 255;
+    --accent-foreground: 14 165 233;
 
     --destructive: 239 68 68;
     --destructive-foreground: 255 255 255;
 
     --border: 226 232 240;
     --input: 226 232 240;
-    --ring: 99 102 241;
+    --ring: 139 92 246;
 
     --radius: 0.75rem;
 
     --sidebar-background: 255 255 255;
-    --sidebar-foreground: 20 20 20;
-    --sidebar-primary: 99 102 241;
+    --sidebar-foreground: 30 41 59;
+    --sidebar-primary: 139 92 246;
     --sidebar-primary-foreground: 255 255 255;
     --sidebar-accent: 241 245 249;
-    --sidebar-accent-foreground: 15 23 42;
+    --sidebar-accent-foreground: 71 85 105;
     --sidebar-border: 226 232 240;
-    --sidebar-ring: 99 102 241;
+    --sidebar-ring: 139 92 246;
+
+    /* Couleurs musicales */
+    --music-purple: 139 92 246;
+    --music-blue: 59 130 246;
+    --music-teal: 20 184 166;
+    --music-pink: 236 72 153;
+    --music-orange: 251 146 60;
+    --music-green: 34 197 94;
   }
 
   .dark {
@@ -55,8 +63,8 @@
     --popover: 30 41 59;
     --popover-foreground: 248 250 252;
 
-    --primary: 129 140 248;
-    --primary-foreground: 15 23 42;
+    --primary: 147 51 234;
+    --primary-foreground: 248 250 252;
 
     --secondary: 51 65 85;
     --secondary-foreground: 203 213 225;
@@ -64,24 +72,32 @@
     --muted: 51 65 85;
     --muted-foreground: 148 163 184;
 
-    --accent: 71 85 105;
-    --accent-foreground: 248 250 252;
+    --accent: 30 58 138;
+    --accent-foreground: 147 197 253;
 
     --destructive: 248 113 113;
     --destructive-foreground: 15 23 42;
 
     --border: 71 85 105;
     --input: 71 85 105;
-    --ring: 129 140 248;
+    --ring: 147 51 234;
 
     --sidebar-background: 30 41 59;
     --sidebar-foreground: 248 250 252;
-    --sidebar-primary: 129 140 248;
-    --sidebar-primary-foreground: 15 23 42;
+    --sidebar-primary: 147 51 234;
+    --sidebar-primary-foreground: 248 250 252;
     --sidebar-accent: 51 65 85;
     --sidebar-accent-foreground: 248 250 252;
     --sidebar-border: 71 85 105;
-    --sidebar-ring: 129 140 248;
+    --sidebar-ring: 147 51 234;
+
+    /* Couleurs musicales dark */
+    --music-purple: 147 51 234;
+    --music-blue: 59 130 246;
+    --music-teal: 45 212 191;
+    --music-pink: 244 114 182;
+    --music-orange: 251 146 60;
+    --music-green: 74 222 128;
   }
 }
 
@@ -106,8 +122,8 @@
 
 @layer utilities {
   .note-card {
-    @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 
-           hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 
+    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 
+           hover:shadow-lg hover:border-violet-300 dark:hover:border-violet-600 
            transition-all duration-300 cursor-pointer overflow-hidden;
   }
   
@@ -116,68 +132,71 @@
   }
   
   .glass-card {
-    @apply backdrop-blur-lg bg-white/90 dark:bg-gray-900/90 
-           border border-gray-200/50 dark:border-gray-700/50 
+    @apply backdrop-blur-lg bg-white/90 dark:bg-slate-900/90 
+           border border-slate-200/50 dark:border-slate-700/50 
            rounded-2xl shadow-xl;
   }
   
   .floating-header {
-    @apply sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 
-           border-b border-gray-200/50 dark:border-gray-700/50;
+    @apply sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 
+           border-b border-slate-200/50 dark:border-slate-700/50;
   }
   
   .modern-sidebar {
-    @apply bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700;
+    @apply bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700;
   }
   
   .nav-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 
-           hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white
-           transition-all duration-200 font-medium;
+    @apply flex items-center gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-xl text-slate-700 dark:text-slate-300 
+           hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300
+           transition-all duration-200 font-medium text-sm sm:text-base;
   }
   
   .nav-link-active {
-    @apply bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 
-           border border-indigo-200 dark:border-indigo-800;
+    @apply bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400 
+           border border-violet-200 dark:border-violet-800;
   }
   
   .modern-input {
-    @apply bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 
-           rounded-xl px-4 py-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent
-           transition-all duration-200;
+    @apply bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 
+           rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-violet-500 focus:border-transparent
+           transition-all duration-200 text-sm sm:text-base;
   }
   
   .modern-button {
-    @apply bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 
+    @apply bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 
+           text-white font-medium px-4 py-2 sm:px-6 sm:py-3 
            rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl
-           active:scale-95;
+           active:scale-95 text-sm sm:text-base;
   }
   
   .modern-button-secondary {
-    @apply bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 
-           text-gray-700 dark:text-gray-300 font-medium px-6 py-3 
-           rounded-xl transition-all duration-200 border border-gray-200 dark:border-gray-700;
+    @apply bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 
+           text-slate-700 dark:text-slate-300 font-medium px-4 py-2 sm:px-6 sm:py-3 
+           rounded-xl transition-all duration-200 border border-slate-200 dark:border-slate-700
+           text-sm sm:text-base;
   }
   
   .editor-toolbar {
-    @apply flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 
-           border-b border-gray-200 dark:border-gray-700 rounded-t-xl;
+    @apply flex items-center gap-2 p-2 sm:p-3 bg-slate-50 dark:bg-slate-800 
+           border-b border-slate-200 dark:border-slate-700 rounded-t-xl;
   }
   
   .toolbar-button {
-    @apply px-3 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 
-           hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 
+    @apply px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-400 
+           hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 
            rounded-lg transition-all duration-200;
   }
   
   .masonry-grid {
     column-count: 1;
-    column-gap: 1.5rem;
+    column-gap: 1rem;
   }
   
   @media (min-width: 640px) {
     .masonry-grid {
       column-count: 2;
+      column-gap: 1.5rem;
     }
   }
   
@@ -195,7 +214,41 @@
   
   .masonry-item {
     break-inside: avoid;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem sm:margin-bottom: 1.5rem;
+  }
+
+  /* Couleurs musicales */
+  .music-purple { @apply text-violet-500; }
+  .music-blue { @apply text-blue-500; }
+  .music-teal { @apply text-teal-500; }
+  .music-pink { @apply text-pink-500; }
+  .music-orange { @apply text-orange-400; }
+  .music-green { @apply text-green-500; }
+
+  .bg-music-purple { @apply bg-violet-500; }
+  .bg-music-blue { @apply bg-blue-500; }
+  .bg-music-teal { @apply bg-teal-500; }
+  .bg-music-pink { @apply bg-pink-500; }
+  .bg-music-orange { @apply bg-orange-400; }
+  .bg-music-green { @apply bg-green-500; }
+
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    .mobile-title {
+      @apply text-lg font-semibold;
+    }
+    
+    .mobile-subtitle {
+      @apply text-sm;
+    }
+    
+    .mobile-button {
+      @apply text-xs px-3 py-2;
+    }
+    
+    .mobile-card {
+      @apply p-3 rounded-xl;
+    }
   }
 }
 
