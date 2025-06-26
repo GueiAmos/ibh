@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Music, BookmarkIcon, CirclePlay, Headphones, MicVocal, FolderOpen, Plus, TrendingUp } from 'lucide-react';
@@ -83,7 +84,7 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
       {/* Welcome section */}
       <div className="text-center space-y-2">
         <h1 className="text-2xl md:text-4xl font-bold">
-          Bon retour, <span className="text-gradient">{user?.email?.split('@')[0]}</span> ! 🎵
+          Bon retour, <span className="text-blue-600">{user?.email?.split('@')[0]}</span> ! 🎵
         </h1>
         <p className="text-muted-foreground">
           Prêt à créer quelque chose d'extraordinaire aujourd'hui ?
@@ -97,21 +98,18 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
           icon={<Plus className="h-8 w-8" />} 
           title="Nouvelle note" 
           description="Créer une nouvelle composition"
-          color="blue"
         />
         <QuickActionCard 
           to="/beats" 
           icon={<Music className="h-8 w-8" />} 
           title="Explorer les beats" 
           description="Découvrir de nouveaux rythmes"
-          color="purple"
         />
         <QuickActionCard 
           to="/folders" 
           icon={<FolderOpen className="h-8 w-8" />} 
           title="Gérer mes dossiers" 
           description="Organiser mes créations"
-          color="green"
         />
       </div>
       
@@ -198,15 +196,15 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
               
               <div className="flex justify-between items-center p-4 rounded-xl bg-accent/30">
                 <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                    <Music className="h-5 w-5 text-purple-600" />
+                  <div className="h-10 w-10 rounded-lg bg-slate-500/10 flex items-center justify-center">
+                    <Music className="h-5 w-5 text-slate-600" />
                   </div>
                   <div>
                     <p className="font-medium">Beats ajoutés</p>
                     <p className="text-sm text-muted-foreground">Au total</p>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-purple-600">{stats.beats}</span>
+                <span className="text-2xl font-bold text-slate-600">{stats.beats}</span>
               </div>
             </div>
           </div>
@@ -236,34 +234,20 @@ const QuickActionCard = ({
   to, 
   icon, 
   title, 
-  description,
-  color = "blue"
+  description
 }: { 
   to: string; 
   icon: React.ReactNode; 
   title: string;
   description: string;
-  color?: string;
 }) => {
-  const colorVariants = {
-    blue: "hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950/30 bg-gradient-to-br from-blue-500/10 to-blue-600/5 text-blue-600 border-blue-200/50",
-    purple: "hover:bg-purple-50 hover:border-purple-200 dark:hover:bg-purple-950/30 bg-gradient-to-br from-purple-500/10 to-purple-600/5 text-purple-600 border-purple-200/50",
-    green: "hover:bg-green-50 hover:border-green-200 dark:hover:bg-green-950/30 bg-gradient-to-br from-green-500/10 to-green-600/5 text-green-600 border-green-200/50",
-    orange: "hover:bg-orange-50 hover:border-orange-200 dark:hover:bg-orange-950/30 bg-gradient-to-br from-orange-500/10 to-orange-600/5 text-orange-600 border-orange-200/50"
-  };
-
   return (
     <Link 
       to={to} 
-      className={cn(
-        "group block p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg hover:scale-105",
-        colorVariants[color as keyof typeof colorVariants]
-      )}
+      className="group block p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg hover:scale-105 hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950/30 bg-gradient-to-br from-blue-500/10 to-blue-600/5 text-blue-600 border-blue-200/50"
     >
       <div className="flex flex-col items-center text-center space-y-4">
-        <div className={cn(
-          "h-16 w-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform bg-white/50 dark:bg-black/20"
-        )}>
+        <div className="h-16 w-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform bg-white/50 dark:bg-black/20">
           {icon}
         </div>
         <div>
@@ -313,7 +297,7 @@ const LandingPage = () => {
             variants={item}
             className="text-4xl md:text-6xl font-bold mb-4 leading-tight"
           >
-            Votre <span className="text-gradient">studio d'écriture</span> musical
+            Votre <span className="text-blue-600">studio d'écriture</span> musical
           </motion.h1>
 
           <motion.p 

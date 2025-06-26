@@ -198,6 +198,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
           size="sm" 
           variant={isRecording ? "destructive" : "outline"} 
           onClick={() => setIsRecording(!isRecording)}
+          className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
         >
           {isRecording ? 'Annuler' : (
             <>
@@ -209,7 +210,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
       </div>
       
       {isRecording && (
-        <div className="border rounded-md p-4 bg-muted/30">
+        <div className="border rounded-md p-4 bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700">
           <VoiceRecorder onRecordingComplete={handleRecordingComplete} />
         </div>
       )}
@@ -231,7 +232,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
               key={recording.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="border rounded-md p-3 bg-background flex flex-col sm:flex-row gap-3 items-start sm:items-center"
+              className="border rounded-md p-3 bg-background flex flex-col sm:flex-row gap-3 items-start sm:items-center border-slate-200 dark:border-slate-700"
             >
               {editingId === recording.id ? (
                 <div className="flex-1">
@@ -252,6 +253,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
                     <Button 
                       size="sm" 
                       onClick={() => handleRenameRecording(recording.id)}
+                      className="bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       Enregistrer
                     </Button>
@@ -268,7 +270,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
                       variant="ghost" 
                       size="icon" 
                       onClick={() => startEditing(recording)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 text-slate-600 hover:text-slate-900"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -278,7 +280,7 @@ export function VoiceRecordingsList({ noteId, onRecordingAdded }: VoiceRecording
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          className="h-8 w-8 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

@@ -90,13 +90,13 @@ export function VoiceRecorder({ onRecordingComplete, className }: VoiceRecorderP
       <div className="flex items-center justify-between">
         <div className="flex items-center">
           {isRecording ? (
-            <Mic className="text-destructive animate-pulse mr-2" size={20} />
+            <Mic className="text-red-600 animate-pulse mr-2" size={20} />
           ) : (
             <MicOff className="text-muted-foreground mr-2" size={20} />
           )}
           <span className={cn(
             "font-mono text-sm",
-            isRecording ? "text-destructive" : "text-muted-foreground"
+            isRecording ? "text-red-600" : "text-muted-foreground"
           )}>
             {isRecording ? formatTime(recordingTime) : "Prêt à enregistrer"}
           </span>
@@ -106,7 +106,10 @@ export function VoiceRecorder({ onRecordingComplete, className }: VoiceRecorderP
           variant={isRecording ? "destructive" : "default"}
           size="sm"
           onClick={isRecording ? stopRecording : startRecording}
-          className="gap-1"
+          className={cn(
+            "gap-1",
+            !isRecording && "bg-blue-600 hover:bg-blue-700 text-white"
+          )}
         >
           {isRecording ? (
             <>
