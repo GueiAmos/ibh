@@ -113,7 +113,7 @@ const Auth = () => {
         animate="show"
       >
         <motion.div variants={item} className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
             Ivoire Beat Hub
           </h1>
           <p className="text-lg text-muted-foreground max-w-md mx-auto">
@@ -168,7 +168,7 @@ const Auth = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-purple-600 hover:shadow-lg transition-all" disabled={loading}>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-blue-600 hover:shadow-lg transition-all" disabled={loading}>
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -221,7 +221,7 @@ const Auth = () => {
                     </div>
                   </CardContent>
                   <CardFooter>
-                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-purple-600 hover:shadow-lg transition-all" disabled={loading}>
+                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-blue-600 hover:shadow-lg transition-all" disabled={loading}>
                       {loading ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
