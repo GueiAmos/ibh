@@ -89,8 +89,8 @@ export function ModernNoteEditor({
   useEffect(() => {
     setTitle(initialTitle);
     setContent(initialContent);
+    fetchBeats();
     if (noteId) {
-      fetchBeats();
       fetchNoteBeat();
     }
   }, [initialTitle, initialContent, noteId]);
@@ -130,7 +130,9 @@ export function ModernNoteEditor({
         .eq('is_primary', true)
         .single();
         
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
       
       if (data && data.beats) {
         setSelectedBeat(data.beats as Beat);
@@ -160,6 +162,8 @@ export function ModernNoteEditor({
         updated_at: new Date().toISOString()
       };
 
+      let savedNoteId = noteId;
+
       if (noteId) {
         const { error } = await supabase
           .from('notes')
@@ -170,11 +174,14 @@ export function ModernNoteEditor({
         if (error) throw error;
         toast.success('Note mise à jour !');
       } else {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('notes')
-          .insert(noteData);
+          .insert(noteData)
+          .select()
+          .single();
 
         if (error) throw error;
+        savedNoteId = data.id;
         toast.success('Note créée !');
       }
 
@@ -210,11 +217,22 @@ export function ModernNoteEditor({
   };
 
   const handleBeatSelect = async (beatId: string) => {
-    if (!noteId) return;
+    console.log('Selecting beat:', beatId);
+    
+    if (!beatId) return;
     
     try {
       const beat = allBeats.find(b => b.id === beatId);
-      if (!beat) return;
+      if (!beat) {
+        toast.error('Beat non trouvé');
+        return;
+      }
+      
+      // Si on n'a pas de note sauvegardée, on ne peut pas associer de beat
+      if (!noteId) {
+        toast.error('Veuillez d\'abord sauvegarder la note');
+        return;
+      }
       
       const { error } = await supabase
         .from('note_beats')
@@ -222,6 +240,8 @@ export function ModernNoteEditor({
           note_id: noteId,
           beat_id: beatId,
           is_primary: true
+        }, {
+          onConflict: 'note_id,beat_id'
         });
         
       if (error) throw error;
@@ -430,9 +450,9 @@ export function ModernNoteEditor({
                     <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-3 text-center">
                       <Music className="w-6 h-6 lg:w-8 lg:h-8 text-slate-400 mx-auto mb-2" />
                       <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400 mb-2">
-                        Aucun beat sélectionné
+                        {!noteId ? 'Sauvegardez d\'abord la note pour associer un beat' : 'Aucun beat sélectionné'}
                       </p>
-                      {allBeats.length > 0 && (
+                      {allBeats.length > 0 && noteId && (
                         <Select onValueChange={handleBeatSelect}>
                           <SelectTrigger className="w-full text-xs lg:text-sm">
                             <SelectValue placeholder="Choisir un beat" />

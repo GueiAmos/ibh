@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { ModernLayout } from '@/components/layout/ModernLayout';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,7 @@ import {
   Music2,
   TrendingUp,
   Calendar,
-  BookOpen,
-  Star
+  BookOpen
 } from 'lucide-react';
 import { ModernNotesGrid } from '@/components/notes/ModernNotesGrid';
 import { ModernNoteEditor } from '@/components/notes/ModernNoteEditor';
@@ -152,7 +152,6 @@ const Notes = () => {
   const recentNotes = notes.slice(0, 5);
   const totalNotes = notes.length;
   const notesWithAudio = notes.filter(note => note.audioAttached).length;
-  const favoriteNotes = notes.filter(note => note.favorite).length;
 
   return (
     <ModernLayout>
@@ -189,7 +188,7 @@ const Notes = () => {
         </div>
 
         {/* Tableau de bord avec statistiques */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
           <div className="glass-card p-3 lg:p-4 mobile-card">
             <div className="flex items-center gap-2 mobile-compact">
               <div className="w-6 h-6 lg:w-8 lg:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-md flex items-center justify-center">
@@ -204,8 +203,8 @@ const Notes = () => {
 
           <div className="glass-card p-3 lg:p-4 mobile-card">
             <div className="flex items-center gap-2 mobile-compact">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-green-100 dark:bg-green-900/30 rounded-md flex items-center justify-center">
-                <Music2 className="w-3 h-3 lg:w-4 lg:h-4 text-green-600" />
+              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-slate-100 dark:bg-slate-700 rounded-md flex items-center justify-center">
+                <Music2 className="w-3 h-3 lg:w-4 lg:h-4 text-slate-600 dark:text-slate-400" />
               </div>
               <div>
                 <p className="text-xs lg:text-sm font-medium text-slate-600 dark:text-slate-400">Avec audio</p>
@@ -216,20 +215,8 @@ const Notes = () => {
 
           <div className="glass-card p-3 lg:p-4 mobile-card">
             <div className="flex items-center gap-2 mobile-compact">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-md flex items-center justify-center">
-                <Star className="w-3 h-3 lg:w-4 lg:h-4 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-xs lg:text-sm font-medium text-slate-600 dark:text-slate-400">Favoris</p>
-                <p className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white">{favoriteNotes}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-card p-3 lg:p-4 mobile-card">
-            <div className="flex items-center gap-2 mobile-compact">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-purple-100 dark:bg-purple-900/30 rounded-md flex items-center justify-center">
-                <TrendingUp className="w-3 h-3 lg:w-4 lg:h-4 text-purple-600" />
+              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-slate-100 dark:bg-slate-700 rounded-md flex items-center justify-center">
+                <TrendingUp className="w-3 h-3 lg:w-4 lg:h-4 text-slate-600 dark:text-slate-400" />
               </div>
               <div>
                 <p className="text-xs lg:text-sm font-medium text-slate-600 dark:text-slate-400">Cette semaine</p>
@@ -264,7 +251,6 @@ const Notes = () => {
                   <DropdownMenuItem>Récentes</DropdownMenuItem>
                   <DropdownMenuItem>Anciennes</DropdownMenuItem>
                   <DropdownMenuItem>Avec audio</DropdownMenuItem>
-                  <DropdownMenuItem>Favoris</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               
