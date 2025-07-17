@@ -5,55 +5,6 @@
 
 @layer base {
   :root {
-    --background: 12 10 23;
-    --foreground: 248 248 252;
-
-    --card: 20 16 31;
-    --card-foreground: 248 248 252;
-
-    --popover: 20 16 31;
-    --popover-foreground: 248 248 252;
-
-    --primary: 147 51 234;
-    --primary-foreground: 248 248 252;
-
-    --secondary: 30 27 41;
-    --secondary-foreground: 203 213 225;
-
-    --muted: 30 27 41;
-    --muted-foreground: 148 163 184;
-
-    --accent: 67 56 202;
-    --accent-foreground: 248 248 252;
-
-    --destructive: 239 68 68;
-    --destructive-foreground: 248 248 252;
-
-    --border: 51 48 60;
-    --input: 51 48 60;
-    --ring: 147 51 234;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 16 13 26;
-    --sidebar-foreground: 248 248 252;
-    --sidebar-primary: 147 51 234;
-    --sidebar-primary-foreground: 248 248 252;
-    --sidebar-accent: 30 27 41;
-    --sidebar-accent-foreground: 248 248 252;
-    --sidebar-border: 51 48 60;
-    --sidebar-ring: 147 51 234;
-
-    /* Couleurs musicales personnalisées */
-    --music-dark: 8 7 16;
-    --music-purple: 88 28 135;
-    --music-blue: 30 58 138;
-    --music-gold: 217 119 6;
-    --music-silver: 148 163 184;
-    --music-accent: 139 69 19;
-  }
-
-  .dark {
     --background: 8 7 16;
     --foreground: 248 248 252;
 
@@ -90,6 +41,14 @@
     --sidebar-accent-foreground: 248 248 252;
     --sidebar-border: 41 37 56;
     --sidebar-ring: 168 85 247;
+
+    /* Couleurs musicales personnalisées */
+    --music-dark: 8 7 16;
+    --music-purple: 88 28 135;
+    --music-blue: 30 58 138;
+    --music-gold: 217 119 6;
+    --music-silver: 148 163 184;
+    --music-accent: 139 69 19;
   }
 }
 
@@ -104,7 +63,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background: linear-gradient(135deg, hsl(var(--music-dark)), hsl(var(--background)));
+    background: linear-gradient(135deg, hsl(8 7 16), hsl(var(--background)));
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -122,7 +81,7 @@
   
   .note-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 40px -10px hsl(var(--music-purple) / 0.3);
+    box-shadow: 0 20px 40px -10px hsl(88 28 135 / 0.3);
   }
   
   .glass-card {
@@ -146,14 +105,14 @@
   }
   
   .modern-sidebar {
-    @apply bg-gradient-to-b from-sidebar-background to-sidebar-background/90 
-           border-r border-sidebar-border/50 backdrop-blur-sm;
+    @apply bg-gradient-to-b from-card to-card/90 
+           border-r border-border/50 backdrop-blur-sm;
   }
   
   .nav-link {
-    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-sidebar-foreground/80
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-foreground/80
            hover:bg-gradient-to-r hover:from-primary/20 hover:to-accent/20 
-           hover:text-sidebar-foreground transition-all duration-300 font-medium text-sm
+           hover:text-foreground transition-all duration-300 font-medium text-sm
            relative overflow-hidden;
   }
   
@@ -170,7 +129,7 @@
   }
   
   .nav-link-active {
-    @apply bg-gradient-to-r from-primary/30 to-accent/30 text-sidebar-foreground
+    @apply bg-gradient-to-r from-primary/30 to-accent/30 text-foreground
            border border-primary/30 shadow-lg;
   }
   
@@ -256,13 +215,13 @@
   /* Couleurs musicales */
   .music-gradient {
     background: linear-gradient(135deg, 
-      hsl(var(--music-purple)), 
-      hsl(var(--music-blue)), 
-      hsl(var(--music-purple)));
+      hsl(88 28 135), 
+      hsl(30 58 138), 
+      hsl(88 28 135));
   }
   
   .music-card {
-    @apply bg-gradient-to-br from-music-dark to-card border border-border/30
+    @apply bg-gradient-to-br from-background to-card border border-border/30
            rounded-xl shadow-xl backdrop-blur-sm relative overflow-hidden;
   }
   
@@ -274,14 +233,14 @@
     right: 0;
     bottom: 0;
     background: linear-gradient(45deg, 
-      hsl(var(--music-purple) / 0.1), 
+      hsl(88 28 135 / 0.1), 
       transparent, 
-      hsl(var(--music-blue) / 0.1));
+      hsl(30 58 138 / 0.1));
     pointer-events: none;
   }
   
   .music-header {
-    @apply bg-gradient-to-r from-music-dark via-music-purple/20 to-music-blue/20
+    @apply bg-gradient-to-r from-background via-primary/20 to-accent/20
            text-foreground border-b border-border/30 backdrop-blur-lg;
   }
 
@@ -334,9 +293,9 @@
     height: 100%;
     background: conic-gradient(
       from 0deg,
-      hsl(var(--music-purple) / 0.1),
-      hsl(var(--music-blue) / 0.1),
-      hsl(var(--music-purple) / 0.1)
+      hsl(88 28 135 / 0.1),
+      hsl(30 58 138 / 0.1),
+      hsl(88 28 135 / 0.1)
     );
     transform: translate(-50%, -50%);
     animation: vinyl-spin 20s linear infinite;
