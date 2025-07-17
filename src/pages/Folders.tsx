@@ -1,376 +1,265 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
-import { FolderIcon, PlusCircle, Search, Music, BookmarkIcon, Trash2 } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CreateFolderDialog } from '@/components/folders/CreateFolderDialog';
 import { FolderContent } from '@/components/folders/FolderContent';
+import { Folder, FolderOpen, Search, Plus, ArrowLeft, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Skeleton } from '@/components/ui/skeleton';
-import { Folder } from '@/types/folders';
+import { Folder as FolderType } from '@/types/folders';
 
-const Folders = () => {
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedFolder, setSelectedFolder] = useState<Folder | null>(null);
-  const [loading, setLoading] = useState(true);
-  const isMobile = useIsMobile();
+export default function Folders() {
   const { user } = useAuth();
+  const [folders, setFolders] = useState<FolderType[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<FolderType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  // Fetch folders data
-  useEffect(() => {
-    const fetchFolders = async () => {
-      if (!user) return;
-      
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('folders')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (error) throw error;
-        
-        setFolders(data || []);
-      } catch (error: any) {
-        console.error('Error fetching folders:', error);
-        toast.error('Erreur lors du chargement des dossiers');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchFolders = async () => {
+    if (!user) return;
     
-    fetchFolders();
-  }, [user]);
-
-  // Filter folders based on search query
-  const filteredFolders = folders.filter(folder =>
-    folder.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleCreateFolder = async (name: string, color: string) => {
-    if (!user) {
-      toast.error('Vous devez être connecté pour créer un dossier');
-      return;
-    }
-    
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('folders')
-        .insert({
-          name,
-          color,
-          user_id: user.id
-        })
-        .select();
-        
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
       if (error) throw error;
-      
-      if (data && data[0]) {
-        setFolders([data[0], ...folders]);
-        setIsCreateDialogOpen(false);
-        toast.success('Dossier créé avec succès!');
-      }
-    } catch (error: any) {
-      console.error('Error creating folder:', error);
-      toast.error('Erreur lors de la création du dossier');
+      setFolders(data || []);
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      toast.error('Erreur lors du chargement des dossiers');
+    } finally {
+      setLoading(false);
     }
   };
-  
+
+  useEffect(() => {
+    fetchFolders();
+  }, [user]);
+
+  const handleFolderCreated = () => {
+    fetchFolders();
+    setShowCreateDialog(false);
+    toast.success('Dossier créé avec succès');
+  };
+
   const handleDeleteFolder = async (folderId: string) => {
     try {
-      // First delete all folder items
-      const { error: itemsError } = await supabase
-        .from('folder_items')
-        .delete()
-        .eq('folder_id', folderId);
-        
-      if (itemsError) throw itemsError;
-      
-      // Then delete the folder
       const { error } = await supabase
         .from('folders')
         .delete()
         .eq('id', folderId);
-        
+
       if (error) throw error;
       
-      setFolders(folders.filter(folder => folder.id !== folderId));
+      setFolders(prev => prev.filter(folder => folder.id !== folderId));
       toast.success('Dossier supprimé');
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error deleting folder:', error);
-      toast.error('Erreur lors de la suppression du dossier');
+      toast.error('Erreur lors de la suppression');
     }
   };
 
-  // Get folder item counts
-  const [folderCounts, setFolderCounts] = useState<{[key: string]: {notes: number, beats: number}}>({});
-  
-  useEffect(() => {
-    const fetchFolderCounts = async () => {
-      if (!folders.length || !user) return;
-      
-      try {
-        const folderIds = folders.map(folder => folder.id);
-        
-        const { data, error } = await supabase
-          .from('folder_items')
-          .select('folder_id, item_type')
-          .in('folder_id', folderIds);
-          
-        if (error) throw error;
-        
-        const counts: {[key: string]: {notes: number, beats: number}} = {};
-        
-        folders.forEach(folder => {
-          counts[folder.id] = { notes: 0, beats: 0 };
-        });
-        
-        data?.forEach(item => {
-          if (item.item_type === 'note') {
-            counts[item.folder_id].notes++;
-          } else if (item.item_type === 'beat') {
-            counts[item.folder_id].beats++;
-          }
-        });
-        
-        setFolderCounts(counts);
-      } catch (error: any) {
-        console.error('Error fetching folder counts:', error);
-      }
-    };
-    
-    fetchFolderCounts();
-  }, [folders, user]);
+  const filteredFolders = folders.filter(folder =>
+    folder.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  // Helper function to get appropriate CSS classes for folder colors
-  const getFolderColorClasses = (color: string) => {
-    const colorMap: {[key: string]: {bg: string, text: string}} = {
-      'purple': { bg: 'bg-purple-500/20', text: 'text-purple-500' },
-      'blue': { bg: 'bg-blue-500/20', text: 'text-blue-500' },
-      'green': { bg: 'bg-green-500/20', text: 'text-green-500' },
-      'amber': { bg: 'bg-amber-500/20', text: 'text-amber-500' },
-      'rose': { bg: 'bg-rose-500/20', text: 'text-rose-500' }
-    };
-    
-    return colorMap[color] || { bg: 'bg-primary/20', text: 'text-primary' };
-  };
+  if (selectedFolder) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="music-card p-6 border border-music-copper/20"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  onClick={() => setSelectedFolder(null)}
+                  className="hover:bg-music-copper/20"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Retour
+                </Button>
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${selectedFolder.color}20` }}
+                  >
+                    <FolderOpen className="w-5 h-5" style={{ color: selectedFolder.color }} />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-foreground">{selectedFolder.name}</h1>
+                    <p className="text-muted-foreground">Contenu du dossier</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+          
+          <FolderContent folder={selectedFolder} />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
-      <div className="ibh-container py-4">
-        {selectedFolder ? (
-          <FolderContent 
-            folderId={selectedFolder.id} 
-            folderName={selectedFolder.name} 
-            onBack={() => setSelectedFolder(null)} 
-            onItemDeleted={() => {
-              // Refresh counts after item deletion
-              const fetchFolderCounts = async () => {
-                if (!folders.length || !user) return;
-                
-                try {
-                  const folderIds = folders.map(folder => folder.id);
-                  
-                  const { data, error } = await supabase
-                    .from('folder_items')
-                    .select('folder_id, item_type')
-                    .in('folder_id', folderIds);
-                    
-                  if (error) throw error;
-                  
-                  const counts: {[key: string]: {notes: number, beats: number}} = {};
-                  
-                  folders.forEach(folder => {
-                    counts[folder.id] = { notes: 0, beats: 0 };
-                  });
-                  
-                  data?.forEach(item => {
-                    if (item.item_type === 'note') {
-                      counts[item.folder_id].notes++;
-                    } else if (item.item_type === 'beat') {
-                      counts[item.folder_id].beats++;
-                    }
-                  });
-                  
-                  setFolderCounts(counts);
-                } catch (error: any) {
-                  console.error('Error fetching folder counts:', error);
-                }
-              };
-              
-              fetchFolderCounts();
-            }}
-          />
-        ) : (
-          <>
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold">Dossiers</h1>
-              <Button 
-                onClick={() => setIsCreateDialogOpen(true)}
-                size={isMobile ? "icon" : "default"}
-              >
-                {isMobile ? (
-                  <PlusCircle className="h-5 w-5" />
-                ) : (
-                  <>
-                    <PlusCircle className="mr-2 h-4 w-4" /> 
-                    Nouveau dossier
-                  </>
-                )}
-              </Button>
+      <div className="space-y-6">
+        {/* Header Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="music-card p-6 border border-music-copper/20"
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-music-copper to-music-crimson bg-clip-text text-transparent">
+                Mes Dossiers
+              </h1>
+              <p className="text-muted-foreground">
+                {folders.length} dossier{folders.length > 1 ? 's' : ''} • Organisez votre contenu
+              </p>
             </div>
             
-            {/* Search bar */}
-            <div className="relative mb-6">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Rechercher un dossier..."
-                className="w-full pl-9 pr-4 py-2 rounded-md border bg-background"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+            <Button 
+              onClick={() => setShowCreateDialog(true)}
+              className="modern-button bg-gradient-to-r from-music-copper to-music-crimson hover:from-music-copper/90 hover:to-music-crimson/90"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouveau dossier
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Search Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="music-card p-4 border border-music-deep-purple/20"
+        >
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un dossier..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 modern-input bg-gradient-to-r from-background/50 to-music-midnight/30 border-music-deep-purple/30"
+            />
+          </div>
+        </motion.div>
+
+        {/* Create Folder Dialog */}
+        <CreateFolderDialog
+          open={showCreateDialog}
+          onOpenChange={setShowCreateDialog}
+          onFolderCreated={handleFolderCreated}
+        />
+
+        {/* Folders Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <Card key={i} className="music-card animate-pulse border-music-deep-purple/20">
+                  <CardHeader>
+                    <div className="h-6 bg-gradient-to-r from-music-copper/20 to-music-crimson/20 rounded"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="h-4 bg-gradient-to-r from-music-copper/20 to-music-crimson/20 rounded"></div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            
-            {/* Folders grid */}
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="glass-panel p-4 rounded-lg">
-                    <div className="flex items-center mb-3">
-                      <Skeleton className="h-8 w-8 rounded-md mr-3" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-40" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredFolders.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredFolders.map(folder => {
-                  const counts = folderCounts[folder.id] || { notes: 0, beats: 0 };
-                  const totalItems = counts.notes + counts.beats;
-                  const colorClasses = getFolderColorClasses(folder.color);
-                  
-                  return (
-                    <div 
-                      key={folder.id}
-                      className="glass-panel p-4 rounded-lg hover:shadow-md transition-shadow cursor-pointer animate-fade-in relative group"
-                      onClick={() => setSelectedFolder(folder)}
-                    >
-                      <div className="flex items-center mb-3">
-                        <div className={`h-10 w-10 rounded-md flex items-center justify-center ${colorClasses.bg}`}>
-                          <FolderIcon className={`h-6 w-6 ${colorClasses.text}`} />
-                        </div>
-                        <div className="ml-3">
-                          <h3 className="font-medium">{folder.name}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {totalItems === 0 ? 'Dossier vide' : (
-                              <>
-                                {counts.notes > 0 && (
-                                  <span>{counts.notes} note{counts.notes > 1 ? 's' : ''}</span>
-                                )}
-                                {counts.notes > 0 && counts.beats > 0 && ', '}
-                                {counts.beats > 0 && (
-                                  <span>{counts.beats} beat{counts.beats > 1 ? 's' : ''}</span>
-                                )}
-                              </>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="text-xs text-muted-foreground">
-                        Créé le {new Date(folder.created_at).toLocaleDateString()}
-                      </div>
-                      
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="destructive" 
-                            size="icon" 
-                            className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={e => e.stopPropagation()}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Êtes-vous sûr?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Cette action supprimera le dossier et tout son contenu définitivement.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteFolder(folder.id);
-                              }} 
-                              className="bg-red-500 hover:bg-red-600"
-                            >
-                              Supprimer
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="glass-panel text-center py-20 rounded-xl flex flex-col items-center">
-                <FolderIcon className="mx-auto h-16 w-16 text-muted-foreground opacity-30 mb-4" />
-                <h3 className="text-xl font-medium">
-                  {searchQuery ? 'Aucun dossier trouvé' : 'Vous n\'avez pas encore de dossiers'}
+          ) : filteredFolders.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="music-card p-12 border-dashed border-2 border-music-copper/30">
+                <div className="vinyl-effect w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-music-copper/20 to-music-crimson/20"></div>
+                <h3 className="text-xl font-semibold mb-3 text-foreground">
+                  {searchTerm ? 'Aucun dossier trouvé' : 'Aucun dossier pour le moment'}
                 </h3>
-                <p className="text-muted-foreground mt-2 mb-6">
-                  {searchQuery 
-                    ? 'Essayez avec des termes différents' 
-                    : 'Créez votre premier dossier pour organiser vos notes et beats'}
+                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                  {searchTerm 
+                    ? `Aucun dossier ne correspond à "${searchTerm}"`
+                    : 'Créez votre premier dossier pour organiser vos notes et beats'
+                  }
                 </p>
-                
-                {!searchQuery && (
-                  <Button onClick={() => setIsCreateDialogOpen(true)} className="rounded-lg shadow-sm">
-                    <PlusCircle className="mr-2 h-4 w-4" />
+                {!searchTerm && (
+                  <Button 
+                    onClick={() => setShowCreateDialog(true)}
+                    className="modern-button bg-gradient-to-r from-music-copper to-music-crimson hover:from-music-copper/90 hover:to-music-crimson/90"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
                     Créer mon premier dossier
                   </Button>
                 )}
               </div>
-            )}
-          </>
-        )}
-
-        {/* Create folder dialog */}
-        <CreateFolderDialog
-          open={isCreateDialogOpen}
-          onOpenChange={setIsCreateDialogOpen}
-          onSubmit={handleCreateFolder}
-        />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredFolders.map((folder, index) => (
+                <motion.div
+                  key={folder.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card 
+                    className="music-card border border-music-deep-purple/20 hover:border-music-copper/40 transition-all duration-300 cursor-pointer group"
+                    onClick={() => setSelectedFolder(folder)}
+                  >
+                    <CardHeader className="pb-3">
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-10 h-10 rounded-xl flex items-center justify-center vinyl-effect"
+                            style={{ backgroundColor: `${folder.color}20` }}
+                          >
+                            <Folder className="w-5 h-5" style={{ color: folder.color }} />
+                          </div>
+                          <span className="text-foreground truncate">{folder.name}</span>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteFolder(folder.id);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-xs text-muted-foreground">
+                        Créé le {new Date(folder.created_at).toLocaleDateString('fr-FR')}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </motion.div>
       </div>
     </MainLayout>
   );
-};
-
-export default Folders;
+}

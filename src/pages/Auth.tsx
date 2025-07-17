@@ -1,247 +1,274 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Loader2, Music, ArrowLeft, User } from 'lucide-react';
-import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import { Eye, EyeOff, Music, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
 
-const Auth = () => {
+export default function Auth() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'signin' | 'signup'>('signin');
   
-  // Get tab from URL query parameter
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const tabParam = searchParams.get('tab');
-    if (tabParam === 'signup') {
-      setActiveTab('signup');
-    }
-  }, [location]);
-  
-  // Redirect if already logged in
+  const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+
   useEffect(() => {
     if (user) {
       navigate('/');
     }
   }, [user, navigate]);
 
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      toast.success('Connexion réussie !');
+      navigate('/');
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      toast.error(error.message || 'Erreur lors de la connexion');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      toast.error('Veuillez remplir tous les champs');
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error('Le mot de passe doit contenir au moins 6 caractères');
+      return;
+    }
+
     setLoading(true);
-    
     try {
       const { error } = await supabase.auth.signUp({
         email,
         password,
       });
-      
+
       if (error) throw error;
       
-      toast.success('Vérifiez votre email pour confirmer votre inscription');
+      toast.success('Compte créé avec succès ! Vérifiez votre email.');
     } catch (error: any) {
-      toast.error(error.message || "Une erreur s'est produite lors de l'inscription");
+      console.error('Sign up error:', error);
+      toast.error(error.message || 'Erreur lors de la création du compte');
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
-    try {
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      if (data) {
-        toast.success('Connexion réussie!');
-        navigate('/');
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Une erreur s'est produite lors de la connexion");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const container = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-accent/30 flex flex-col">
-      <div className="p-4">
-        <Button variant="ghost" className="group" asChild>
-          <Link to="/">
-            <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Retour à l'accueil
-          </Link>
-        </Button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-music-midnight via-background to-music-midnight flex items-center justify-center p-4">
+      {/* Background Elements */}
+      <div className="absolute top-20 right-10 w-64 h-64 rounded-full bg-gradient-to-br from-music-emerald/10 to-music-indigo/10 blur-3xl" />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-gradient-to-br from-music-royal-blue/10 to-music-deep-purple/10 blur-3xl" />
       
-      <motion.div 
-        className="flex flex-col items-center justify-center px-4 py-8 flex-1"
-        variants={container}
-        initial="hidden"
-        animate="show"
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
       >
-        <motion.div variants={item} className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
-            Ivoire Beat Hub
+        {/* Header */}
+        <div className="text-center mb-8">
+          <motion.div 
+            initial={{ scale: 0.8 }}
+            animate={{ scale: 1 }}
+            className="vinyl-effect w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-music-emerald to-music-indigo flex items-center justify-center"
+          >
+            <Music className="w-8 h-8 text-white" />
+          </motion.div>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-music-emerald to-music-indigo bg-clip-text text-transparent">
+            Music Studio
           </h1>
-          <p className="text-lg text-muted-foreground max-w-md mx-auto">
-            L'espace où créativité et musique se rencontrent
+          <p className="text-muted-foreground">
+            Votre espace créatif pour écrire et composer
           </p>
-        </motion.div>
-        
-        <motion.div variants={item} className="w-full max-w-md">
-          <Card className="border shadow-xl bg-card/90 backdrop-blur-sm border-primary/20">
-            <Tabs defaultValue={activeTab} value={activeTab} onValueChange={(v) => setActiveTab(v as 'signin' | 'signup')} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
-                <TabsTrigger value="signin">Connexion</TabsTrigger>
-                <TabsTrigger value="signup">Inscription</TabsTrigger>
+        </div>
+
+        <Card className="music-card border border-music-deep-purple/30">
+          <CardHeader className="text-center pb-4">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Sparkles className="w-5 h-5 text-music-emerald" />
+              <CardTitle className="text-xl text-foreground">Bienvenue</CardTitle>
+              <Sparkles className="w-5 h-5 text-music-indigo" />
+            </div>
+            <CardDescription>
+              Connectez-vous ou créez un compte pour commencer
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent>
+            <Tabs defaultValue={defaultTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6 bg-gradient-to-r from-secondary/50 to-music-midnight/30 border border-music-deep-purple/20">
+                <TabsTrigger 
+                  value="signin"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-music-emerald data-[state=active]:to-music-indigo data-[state=active]:text-white"
+                >
+                  Connexion
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="signup"
+                  className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-music-emerald data-[state=active]:to-music-indigo data-[state=active]:text-white"
+                >
+                  Inscription
+                </TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="signin">
-                <form onSubmit={handleSignIn}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="h-5 w-5 text-primary" />
-                      Connexion
-                    </CardTitle>
-                    <CardDescription>
-                      Connectez-vous pour accéder à vos notes et beats
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        type="email" 
-                        placeholder="votre@email.com" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="modern-input bg-gradient-to-r from-background/50 to-music-midnight/30 border-music-deep-purple/30"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Mot de passe</Label>
+                    <div className="relative">
+                      <Input
+                        id="signin-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="bg-background/50"
+                        className="modern-input bg-gradient-to-r from-background/50 to-music-midnight/30 border-music-deep-purple/30 pr-10"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1 hover:bg-music-deep-purple/20"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="password">Mot de passe</Label>
-                      </div>
-                      <Input 
-                        id="password" 
-                        type="password" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        required
-                        className="bg-background/50"
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-blue-600 hover:shadow-lg transition-all" disabled={loading}>
-                      {loading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Connexion en cours...
-                        </>
-                      ) : 'Se connecter'}
-                    </Button>
-                  </CardFooter>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full modern-button bg-gradient-to-r from-music-emerald to-music-indigo hover:from-music-emerald/90 hover:to-music-indigo/90"
+                    disabled={loading}
+                  >
+                    {loading ? 'Connexion...' : 'Se connecter'}
+                  </Button>
                 </form>
               </TabsContent>
-              
+
               <TabsContent value="signup">
-                <form onSubmit={handleSignUp}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Music className="h-5 w-5 text-primary" />
-                      Inscription
-                    </CardTitle>
-                    <CardDescription>
-                      Créez un compte pour commencer à utiliser IBH
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signupEmail">Email</Label>
-                      <Input 
-                        id="signupEmail" 
-                        type="email" 
-                        placeholder="votre@email.com" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="votre@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="modern-input bg-gradient-to-r from-background/50 to-music-midnight/30 border-music-deep-purple/30"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Mot de passe</Label>
+                    <div className="relative">
+                      <Input
+                        id="signup-password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         required
-                        className="bg-background/50"
+                        className="modern-input bg-gradient-to-r from-background/50 to-music-midnight/30 border-music-deep-purple/30 pr-10"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-auto p-1 hover:bg-music-deep-purple/20"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <Eye className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signupPassword">Mot de passe</Label>
-                      <Input 
-                        id="signupPassword" 
-                        type="password" 
-                        value={password} 
-                        onChange={(e) => setPassword(e.target.value)} 
-                        required
-                        minLength={6}
-                        className="bg-background/50"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Le mot de passe doit contenir au moins 6 caractères
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button type="submit" className="w-full bg-gradient-to-r from-primary to-blue-600 hover:shadow-lg transition-all" disabled={loading}>
-                      {loading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Inscription en cours...
-                        </>
-                      ) : "S'inscrire"}
-                    </Button>
-                  </CardFooter>
+                    <p className="text-xs text-muted-foreground">
+                      Minimum 6 caractères
+                    </p>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full modern-button bg-gradient-to-r from-music-emerald to-music-indigo hover:from-music-emerald/90 hover:to-music-indigo/90"
+                    disabled={loading}
+                  >
+                    {loading ? 'Création...' : 'Créer un compte'}
+                  </Button>
                 </form>
               </TabsContent>
             </Tabs>
-          </Card>
-        </motion.div>
-        
-        <motion.div variants={item} className="mt-8 text-center text-sm text-muted-foreground">
-          Ivoire Beat Hub © {new Date().getFullYear()} - Votre plateforme créative
-        </motion.div>
+
+            <div className="mt-6 text-center">
+              <Link 
+                to="/" 
+                className="text-sm text-music-emerald hover:text-music-indigo transition-colors"
+              >
+                ← Retour à l'accueil
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Footer */}
+        <div className="text-center mt-8 text-xs text-muted-foreground">
+          <p>En vous connectant, vous acceptez nos conditions d'utilisation</p>
+        </div>
       </motion.div>
     </div>
   );
-};
-
-export default Auth;
+}
