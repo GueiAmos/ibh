@@ -10,7 +10,7 @@ interface ModernLayoutProps {
 
 export function ModernLayout({ children }: ModernLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-dark-gradient">
       <div className="flex">
         {/* Sidebar - Hidden on mobile, shown on desktop */}
         <div className="hidden lg:block">
@@ -26,7 +26,9 @@ export function ModernLayout({ children }: ModernLayoutProps) {
             transition={{ duration: 0.3 }}
             className="p-4 md:p-6 lg:p-8"
           >
-            {children}
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
           </motion.main>
         </div>
       </div>

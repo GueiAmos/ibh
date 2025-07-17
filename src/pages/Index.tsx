@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { Music, BookmarkIcon, CirclePlay, Headphones, MicVocal, FolderOpen, Plus, TrendingUp } from 'lucide-react';
@@ -7,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { cn } from '@/lib/utils';
 
 // Dashboard components
 const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => void }) => {
@@ -27,32 +25,27 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
       
       setLoading(true);
       try {
-        // Fetch note count
-        const { count: notesCount, error: notesError } = await supabase
+        const { count: notesCount } = await supabase
           .from('notes')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // Fetch beat count
-        const { count: beatsCount, error: beatsError } = await supabase
+        const { count: beatsCount } = await supabase
           .from('beats')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // Fetch folder count
-        const { count: foldersCount, error: foldersError } = await supabase
+        const { count: foldersCount } = await supabase
           .from('folders')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
           
-        // Fetch recording count
-        const { count: recordingsCount, error: recordingsError } = await supabase
+        const { count: recordingsCount } = await supabase
           .from('voice_recordings')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
           
-        // Fetch recent notes
-        const { data: notes, error: recentNotesError } = await supabase
+        const { data: notes } = await supabase
           .from('notes')
           .select('*')
           .eq('user_id', user.id)
@@ -80,48 +73,63 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
   }, [user]);
 
   return (
-    <div className="py-6 space-y-8">
-      {/* Welcome section */}
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl md:text-4xl font-bold">
-          Bon retour, <span className="text-blue-600">{user?.email?.split('@')[0]}</span> ! 🎵
-        </h1>
-        <p className="text-muted-foreground">
-          Prêt à créer quelque chose d'extraordinaire aujourd'hui ?
-        </p>
-      </div>
+    <div className="py-8 space-y-8">
+      {/* Section d'accueil */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-4"
+      >
+        <div className="music-card p-8 text-center">
+          <div className="vinyl-effect w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-music-purple to-music-blue"></div>
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-music-silver bg-clip-text text-transparent">
+            Bon retour, <span className="text-primary">{user?.email?.split('@')[0]}</span> ! 🎵
+          </h1>
+          <p className="text-lg text-muted-foreground">
+            Prêt à créer quelque chose d'extraordinaire aujourd'hui ?
+          </p>
+        </div>
+      </motion.div>
       
-      {/* Quick actions grid */}
+      {/* Actions rapides */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <QuickActionCard 
           to="/notes" 
           icon={<Plus className="h-8 w-8" />} 
           title="Nouvelle note" 
           description="Créer une nouvelle composition"
+          color="from-music-purple to-primary"
         />
         <QuickActionCard 
           to="/beats" 
           icon={<Music className="h-8 w-8" />} 
           title="Explorer les beats" 
           description="Découvrir de nouveaux rythmes"
+          color="from-music-blue to-accent"
         />
         <QuickActionCard 
           to="/folders" 
           icon={<FolderOpen className="h-8 w-8" />} 
           title="Gérer mes dossiers" 
           description="Organiser mes créations"
+          color="from-music-gold to-music-accent"
         />
       </div>
       
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 md:gap-8">
-        {/* Recent notes */}
-        <div className="glass-panel p-6 rounded-2xl">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Notes récentes */}
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="music-card p-6"
+        >
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl md:text-2xl font-semibold flex items-center">
-              <BookmarkIcon className="h-6 w-6 mr-2 text-blue-500" />
+              <BookmarkIcon className="h-6 w-6 mr-3 text-primary" />
               Notes récentes
             </h2>
-            <Button asChild variant="ghost" size="sm" className="text-blue-500">
+            <Button asChild variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
               <Link to="/notes">Voir tout</Link>
             </Button>
           </div>
@@ -130,10 +138,10 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
                 <div key={i} className="animate-pulse flex items-center space-x-4">
-                  <div className="h-12 w-12 rounded-xl bg-gray-300/20"></div>
+                  <div className="h-12 w-12 rounded-xl bg-muted/20"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 w-3/4 bg-gray-300/20 rounded"></div>
-                    <div className="h-3 w-1/2 bg-gray-300/20 rounded"></div>
+                    <div className="h-4 w-3/4 bg-muted/20 rounded"></div>
+                    <div className="h-3 w-1/2 bg-muted/20 rounded"></div>
                   </div>
                 </div>
               ))}
@@ -144,13 +152,13 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
                 <Link 
                   key={note.id} 
                   to={`/notes?note=${note.id}`}
-                  className="flex items-center p-4 rounded-xl hover:bg-accent/50 transition-all duration-200 group"
+                  className="flex items-center p-4 rounded-xl bg-gradient-to-r from-secondary/50 to-transparent hover:from-primary/10 hover:to-accent/10 transition-all duration-300 group border border-border/30"
                 >
-                  <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-blue-500/10 text-blue-500 mr-4 group-hover:scale-110 transition-transform">
+                  <div className="h-12 w-12 rounded-xl flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20 text-primary mr-4 group-hover:scale-110 transition-transform">
                     <BookmarkIcon className="h-6 w-6" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium line-clamp-1 text-lg">{note.title}</h3>
+                    <h3 className="font-medium line-clamp-1 text-lg text-foreground">{note.title}</h3>
                     <p className="text-sm text-muted-foreground">
                       Modifié le {new Date(note.updated_at).toLocaleDateString('fr-FR')}
                     </p>
@@ -160,10 +168,10 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
             </div>
           ) : (
             <div className="text-center py-12">
-              <BookmarkIcon className="mx-auto h-16 w-16 text-muted-foreground opacity-30 mb-4" />
-              <h3 className="text-lg font-medium mb-2">Aucune note pour le moment</h3>
+              <div className="vinyl-effect w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-muted to-muted/50"></div>
+              <h3 className="text-lg font-medium mb-2 text-foreground">Aucune note pour le moment</h3>
               <p className="text-muted-foreground mb-6">Commencez par créer votre première note</p>
-              <Button asChild size="lg" className="rounded-xl">
+              <Button asChild size="lg" className="modern-button">
                 <Link to="/notes">
                   <Plus className="h-5 w-5 mr-2" />
                   Créer ma première note
@@ -171,51 +179,57 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
               </Button>
             </div>
           )}
-        </div>
+        </motion.div>
 
-        {/* Activity summary */}
-        <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl">
+        {/* Résumé d'activité */}
+        <motion.div 
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.4 }}
+          className="space-y-6"
+        >
+          <div className="music-card p-6">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <TrendingUp className="h-6 w-6 mr-2 text-primary" />
+              <TrendingUp className="h-6 w-6 mr-3 text-primary" />
               Activité récente
             </h2>
             <div className="space-y-4">
-              <div className="flex justify-between items-center p-4 rounded-xl bg-accent/30">
+              <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
                 <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <BookmarkIcon className="h-5 w-5 text-blue-600" />
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+                    <BookmarkIcon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Notes créées</p>
+                    <p className="font-medium text-foreground">Notes créées</p>
                     <p className="text-sm text-muted-foreground">Cette semaine</p>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-blue-600">{stats.notes}</span>
+                <span className="text-2xl font-bold text-primary beat-pulse">{stats.notes}</span>
               </div>
               
-              <div className="flex justify-between items-center p-4 rounded-xl bg-accent/30">
+              <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-music-blue/10 to-music-purple/10 border border-music-blue/20">
                 <div className="flex items-center space-x-3">
-                  <div className="h-10 w-10 rounded-lg bg-slate-500/10 flex items-center justify-center">
-                    <Music className="h-5 w-5 text-slate-600" />
+                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-music-blue/20 to-music-purple/20 flex items-center justify-center">
+                    <Music className="h-5 w-5 text-music-blue" />
                   </div>
                   <div>
-                    <p className="font-medium">Beats ajoutés</p>
+                    <p className="font-medium text-foreground">Beats ajoutés</p>
                     <p className="text-sm text-muted-foreground">Au total</p>
                   </div>
                 </div>
-                <span className="text-2xl font-bold text-slate-600">{stats.beats}</span>
+                <span className="text-2xl font-bold text-music-blue">{stats.beats}</span>
               </div>
             </div>
           </div>
           
-          <div className="glass-panel p-6 rounded-2xl border-dashed border-2 border-primary/20">
+          <div className="music-card p-6 border-dashed border-2 border-primary/30">
             <div className="text-center">
-              <h3 className="font-medium mb-2">Envie d'explorer ?</h3>
+              <div className="vinyl-effect w-12 h-12 mx-auto mb-4 bg-gradient-to-br from-primary to-accent"></div>
+              <h3 className="font-medium mb-2 text-foreground">Envie d'explorer ?</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Découvrez toutes nos fonctionnalités
               </p>
-              <Button asChild variant="outline" size="sm" className="w-full">
+              <Button asChild variant="outline" size="sm" className="w-full modern-button-secondary">
                 <Link to="/" onClick={() => setShowLanding(true)}>
                   <CirclePlay className="h-4 w-4 mr-2" />
                   Page d'accueil
@@ -223,7 +237,7 @@ const UserDashboard = ({ setShowLanding }: { setShowLanding: (show: boolean) => 
               </Button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -234,28 +248,38 @@ const QuickActionCard = ({
   to, 
   icon, 
   title, 
-  description
+  description,
+  color = "from-primary to-accent"
 }: { 
   to: string; 
   icon: React.ReactNode; 
   title: string;
   description: string;
+  color?: string;
 }) => {
   return (
-    <Link 
-      to={to} 
-      className="group block p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg hover:scale-105 hover:bg-blue-50 hover:border-blue-200 dark:hover:bg-blue-950/30 bg-gradient-to-br from-blue-500/10 to-blue-600/5 text-blue-600 border-blue-200/50"
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
     >
-      <div className="flex flex-col items-center text-center space-y-4">
-        <div className="h-16 w-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform bg-white/50 dark:bg-black/20">
-          {icon}
+      <Link 
+        to={to} 
+        className={`group block p-6 rounded-2xl border border-border/30 transition-all duration-300 
+                   hover:shadow-2xl hover:border-primary/50 music-card relative overflow-hidden`}
+      >
+        <div className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+        <div className="relative z-10 flex flex-col items-center text-center space-y-4">
+          <div className={`h-16 w-16 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform 
+                          bg-gradient-to-br ${color} text-white shadow-lg`}>
+            {icon}
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-2 text-foreground">{title}</h3>
+            <p className="text-sm text-muted-foreground">{description}</p>
+          </div>
         </div>
-        <div>
-          <h3 className="font-semibold text-lg mb-2">{title}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-      </div>
-    </Link>
+      </Link>
+    </motion.div>
   );
 };
 
@@ -281,23 +305,28 @@ const LandingPage = () => {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Background elements */}
-      <div className="absolute top-20 right-10 w-64 h-64 rounded-full bg-primary/10 blur-3xl -z-10" />
-      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-blue-400/10 blur-3xl -z-10" />
+      {/* Éléments d'arrière-plan */}
+      <div className="absolute top-20 right-10 w-64 h-64 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 blur-3xl -z-10" />
+      <div className="absolute bottom-20 left-10 w-80 h-80 rounded-full bg-gradient-to-br from-music-purple/20 to-music-blue/20 blur-3xl -z-10" />
       
-      {/* Hero section */}
-      <section className="ibh-container pt-12 pb-20">
+      {/* Section héros */}
+      <section className="container mx-auto px-4 pt-12 pb-20">
         <motion.div 
           className="flex flex-col items-center text-center"
           variants={container}
           initial="hidden"
           animate="show"
         >
+          <motion.div 
+            variants={item}
+            className="vinyl-effect w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-primary to-accent"
+          />
+
           <motion.h1 
             variants={item}
             className="text-4xl md:text-6xl font-bold mb-4 leading-tight"
           >
-            Votre <span className="text-blue-600">studio d'écriture</span> musical
+            Votre <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">studio d'écriture</span> musical
           </motion.h1>
 
           <motion.p 
@@ -314,13 +343,13 @@ const LandingPage = () => {
           >
             {!loading && (user ? (
               <>
-                <Button asChild size="lg" className="rounded-full">
+                <Button asChild size="lg" className="modern-button">
                   <Link to="/notes">
                     <BookmarkIcon className="mr-2 h-5 w-5" />
                     Commencer à écrire
                   </Link>
                 </Button>
-                <Button variant="outline" asChild size="lg" className="rounded-full">
+                <Button asChild size="lg" className="modern-button-secondary">
                   <Link to="/beats">
                     <Music className="mr-2 h-5 w-5" />
                     Explorer les beats
@@ -329,13 +358,13 @@ const LandingPage = () => {
               </>
             ) : (
               <>
-                <Button asChild size="lg" className="rounded-full">
+                <Button asChild size="lg" className="modern-button">
                   <Link to="/auth">
                     <BookmarkIcon className="mr-2 h-5 w-5" />
                     Se connecter
                   </Link>
                 </Button>
-                <Button variant="outline" asChild size="lg" className="rounded-full">
+                <Button asChild size="lg" className="modern-button-secondary">
                   <Link to="/auth?tab=signup">
                     <Music className="mr-2 h-5 w-5" />
                     S'inscrire
@@ -347,11 +376,11 @@ const LandingPage = () => {
         </motion.div>
       </section>
 
-      {/* Features section */}
-      <section className="bg-accent/50 dark:bg-accent/50 py-20">
-        <div className="ibh-container">
+      {/* Section des fonctionnalités */}
+      <section className="music-header py-20">
+        <div className="container mx-auto px-4">
           <motion.h2 
-            className="text-3xl font-bold text-center mb-12"
+            className="text-3xl font-bold text-center mb-12 text-foreground"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -372,22 +401,22 @@ const LandingPage = () => {
               description="Organisez vos textes avec des sections claires: couplet, refrain, pont et plus."
             />
             <FeatureCard 
-              icon={<Headphones className="h-12 w-12 text-primary" />}
+              icon={<Headphones className="h-12 w-12 text-accent" />}
               title="Beats Intégrés"
               description="Écoutez des beats tout en écrivant pour rester dans le rythme et l'ambiance."
             />
             <FeatureCard 
-              icon={<MicVocal className="h-12 w-12 text-primary" />}
+              icon={<MicVocal className="h-12 w-12 text-music-blue" />}
               title="Enregistrement Vocal"
               description="Enregistrez votre voix directement dans l'application pour tester vos flows."
             />
             <FeatureCard 
-              icon={<CirclePlay className="h-12 w-12 text-primary" />}
+              icon={<CirclePlay className="h-12 w-12 text-music-purple" />}
               title="Lecture Synchronisée"
               description="Écoutez vos enregistrements en même temps que les beats pour affiner votre style."
             />
             <FeatureCard 
-              icon={<FolderOpen className="h-12 w-12 text-primary" />}
+              icon={<FolderOpen className="h-12 w-12 text-music-gold" />}
               title="Organisation"
               description="Classez vos créations dans des dossiers pour retrouver facilement vos projets."
             />
@@ -400,25 +429,26 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* CTA Section - Only show when not logged in */}
+      {/* Section CTA */}
       {!loading && !user && (
-        <section className="ibh-container py-20">
+        <section className="container mx-auto px-4 py-20">
           <motion.div 
-            className="glass-panel p-8 md:p-12 text-center rounded-3xl relative overflow-hidden"
+            className="music-card p-8 md:p-12 text-center relative overflow-hidden"
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent -z-10" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-accent/10 -z-10" />
             
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <div className="vinyl-effect w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary to-accent"></div>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
               Prêt à donner vie à vos textes?
             </h2>
             <p className="text-lg mb-8 max-w-2xl mx-auto text-muted-foreground">
               Rejoignez notre communauté de créateurs et transformez vos idées en morceaux aboutis.
             </p>
-            <Button asChild size="lg" className="rounded-full">
+            <Button asChild size="lg" className="modern-button">
               <Link to="/auth">
                 Créer un compte gratuit
               </Link>
@@ -442,15 +472,18 @@ const FeatureCard = ({
 }) => {
   return (
     <motion.div
-      className="glass-panel p-6 rounded-3xl h-full"
+      className="music-card p-6 h-full group hover:scale-105 transition-all duration-300"
       variants={{
         hidden: { opacity: 0, y: 20 },
         show: { opacity: 1, y: 0 }
       }}
+      whileHover={{ y: -5 }}
     >
       <div className="flex flex-col items-center text-center h-full">
-        <div className="mb-4 p-3 rounded-2xl bg-primary/10 text-primary">{icon}</div>
-        <h3 className="text-xl font-semibold mb-2">{title}</h3>
+        <div className="mb-4 p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 group-hover:scale-110 transition-transform">
+          {icon}
+        </div>
+        <h3 className="text-xl font-semibold mb-2 text-foreground">{title}</h3>
         <p className="text-muted-foreground">{description}</p>
       </div>
     </motion.div>
@@ -462,7 +495,6 @@ const Index = () => {
   const { user, loading } = useAuth();
   const [showLanding, setShowLanding] = useState(false);
   
-  // If user is logged in but explicitly wants to see landing
   if (showLanding && user) {
     return (
       <MainLayout>
@@ -470,7 +502,7 @@ const Index = () => {
           <Button 
             variant="outline" 
             onClick={() => setShowLanding(false)}
-            className="mb-2"
+            className="mb-2 modern-button-secondary"
           >
             Retour au tableau de bord
           </Button>
@@ -480,7 +512,6 @@ const Index = () => {
     );
   }
   
-  // If user is logged in and hasn't chosen to see landing, show dashboard
   if (user && !showLanding) {
     return (
       <MainLayout>
@@ -489,7 +520,6 @@ const Index = () => {
     );
   }
   
-  // For users not logged in, show landing page
   return <LandingPage />;
 };
 

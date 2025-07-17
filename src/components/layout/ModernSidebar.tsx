@@ -8,12 +8,12 @@ import {
   FolderOpen, 
   Settings, 
   LogOut,
-  User,
   PenTool
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { motion } from 'framer-motion';
 
 export function ModernSidebar() {
   const location = useLocation();
@@ -24,26 +24,31 @@ export function ModernSidebar() {
       title: 'Accueil',
       href: '/',
       icon: Home,
+      color: 'from-primary to-accent'
     },
     {
       title: 'Notes',
       href: '/notes',
       icon: FileText,
+      color: 'from-music-purple to-primary'
     },
     {
       title: 'Beats',
       href: '/beats',
       icon: Music,
+      color: 'from-music-blue to-accent'
     },
     {
       title: 'Dossiers',
       href: '/folders',
       icon: FolderOpen,
+      color: 'from-music-gold to-music-accent'
     },
     {
       title: 'Paramètres',
       href: '/settings',
       icon: Settings,
+      color: 'from-muted to-secondary'
     },
   ];
 
@@ -61,52 +66,68 @@ export function ModernSidebar() {
   const userInitials = userDisplayName.substring(0, 2).toUpperCase();
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 modern-sidebar z-40">
+    <div className="fixed left-0 top-0 h-full w-64 modern-sidebar z-40 shadow-2xl">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+        <div className="p-6 border-b border-sidebar-border/50">
+          <motion.div 
+            className="flex items-center gap-3"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center vinyl-effect">
               <PenTool className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Notes</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Studio</p>
+              <h1 className="text-xl font-bold text-sidebar-foreground">Music</h1>
+              <p className="text-sm text-sidebar-foreground/70">Studio</p>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => (
-            <Link
+          {navItems.map((item, index) => (
+            <motion.div
               key={item.href}
-              to={item.href}
-              className={`nav-link ${
-                location.pathname === item.href ? 'nav-link-active' : ''
-              }`}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
             >
-              <item.icon className="w-5 h-5" />
-              <span>{item.title}</span>
-            </Link>
+              <Link
+                to={item.href}
+                className={`nav-link ${
+                  location.pathname === item.href ? 'nav-link-active' : ''
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center`}>
+                  <item.icon className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-medium">{item.title}</span>
+              </Link>
+            </motion.div>
           ))}
         </nav>
 
         {/* User section */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-4 border-t border-sidebar-border/50">
           {user && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800">
+            <motion.div 
+              className="space-y-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-secondary/50 to-transparent border border-border/30">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-sm bg-indigo-500 text-white">
+                  <AvatarFallback className="text-sm bg-gradient-to-br from-primary to-accent text-white">
                     {userInitials}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
                     {userDisplayName}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-sidebar-foreground/60 truncate">
                     {user.email}
                   </p>
                 </div>
@@ -114,12 +135,14 @@ export function ModernSidebar() {
               
               <button
                 onClick={handleLogout}
-                className="nav-link w-full text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                className="nav-link w-full text-destructive hover:bg-destructive/10 border border-destructive/20"
               >
-                <LogOut className="w-5 h-5" />
-                <span>Déconnexion</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-destructive/20 to-destructive/30 flex items-center justify-center">
+                  <LogOut className="w-4 h-4 text-destructive" />
+                </div>
+                <span className="font-medium">Déconnexion</span>
               </button>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

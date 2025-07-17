@@ -12,7 +12,6 @@ import {
   StickyNote,
   Music2,
   TrendingUp,
-  Calendar,
   BookOpen
 } from 'lucide-react';
 import { ModernNotesGrid } from '@/components/notes/ModernNotesGrid';
@@ -37,41 +36,6 @@ const Notes = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'masonry' | 'grid' | 'list'>('masonry');
   const { user } = useAuth();
-
-  useEffect(() => {
-    const fetchNotes = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('notes')
-          .select('*')
-          .order('updated_at', { ascending: false });
-
-        if (error) throw error;
-
-        const formattedNotes = data?.map(note => ({
-          id: note.id,
-          title: note.title,
-          content: note.content || '',
-          createdAt: new Date(note.created_at),
-          updatedAt: new Date(note.updated_at),
-          favorite: false,
-          audioAttached: !!note.audio_url,
-          sections: []
-        })) || [];
-
-        setNotes(formattedNotes);
-      } catch (error: any) {
-        console.error('Error fetching notes:', error);
-        toast.error(`Erreur lors du chargement des notes: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNotes();
-  }, [user]);
 
   const handleNoteSelect = (note: Note) => {
     setSelectedNote(note);
@@ -134,6 +98,41 @@ const Notes = () => {
     handleCloseEditor();
   };
 
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('notes')
+          .select('*')
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+
+        const formattedNotes = data?.map(note => ({
+          id: note.id,
+          title: note.title,
+          content: note.content || '',
+          createdAt: new Date(note.created_at),
+          updatedAt: new Date(note.updated_at),
+          favorite: false,
+          audioAttached: !!note.audio_url,
+          sections: []
+        })) || [];
+
+        setNotes(formattedNotes);
+      } catch (error: any) {
+        console.error('Error fetching notes:', error);
+        toast.error(`Erreur lors du chargement des notes: ${error.message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotes();
+  }, [user]);
+
   if (isEditorOpen) {
     return (
       <ModernNoteEditor 
@@ -147,7 +146,6 @@ const Notes = () => {
     );
   }
 
-  // Statistiques pour le tableau de bord
   const recentNotes = notes.slice(0, 5);
   const totalNotes = notes.length;
   const notesWithAudio = notes.filter(note => note.audioAttached).length;
@@ -157,20 +155,20 @@ const Notes = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-4 mobile-spacing max-w-7xl mx-auto"
+        className="space-y-6 max-w-7xl mx-auto"
       >
         {/* Header principal */}
-        <div className="glass-card p-4 mobile-card">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mobile-compact">
-            <div className="flex items-center gap-3 mobile-compact">
-              <div className="w-8 h-8 lg:w-10 lg:h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Music2 className="w-4 h-4 lg:w-5 lg:h-5 text-white" />
+        <div className="music-card p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center vinyl-effect">
+                <Music2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg lg:text-2xl font-bold text-slate-900 dark:text-white mobile-title">
+                <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
                   Mes Notes Musicales
                 </h1>
-                <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400 mobile-subtitle">
+                <p className="text-sm lg:text-base text-muted-foreground">
                   Créez et organisez vos paroles et idées musicales
                 </p>
               </div>
@@ -178,71 +176,71 @@ const Notes = () => {
             
             <Button 
               onClick={handleNewNote} 
-              className="modern-button mobile-button"
+              className="modern-button"
             >
-              <Plus className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
+              <Plus className="w-4 h-4 mr-2" />
               Nouvelle note
             </Button>
           </div>
         </div>
 
         {/* Tableau de bord avec statistiques */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
-          <div className="glass-card p-3 lg:p-4 mobile-card">
-            <div className="flex items-center gap-2 mobile-compact">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-blue-100 dark:bg-blue-900/30 rounded-md flex items-center justify-center">
-                <BookOpen className="w-3 h-3 lg:w-4 lg:h-4 text-blue-600" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="music-card p-6 group hover:scale-105 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-xs lg:text-sm font-medium text-slate-600 dark:text-slate-400">Total</p>
-                <p className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white">{totalNotes}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total</p>
+                <p className="text-2xl font-bold text-foreground beat-pulse">{totalNotes}</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card p-3 lg:p-4 mobile-card">
-            <div className="flex items-center gap-2 mobile-compact">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-slate-100 dark:bg-slate-700 rounded-md flex items-center justify-center">
-                <Music2 className="w-3 h-3 lg:w-4 lg:h-4 text-slate-600 dark:text-slate-400" />
+          <div className="music-card p-6 group hover:scale-105 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-music-blue/20 to-music-purple/20 rounded-xl flex items-center justify-center">
+                <Music2 className="w-6 h-6 text-music-blue" />
               </div>
               <div>
-                <p className="text-xs lg:text-sm font-medium text-slate-600 dark:text-slate-400">Avec audio</p>
-                <p className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white">{notesWithAudio}</p>
+                <p className="text-sm font-medium text-muted-foreground">Avec audio</p>
+                <p className="text-2xl font-bold text-foreground">{notesWithAudio}</p>
               </div>
             </div>
           </div>
 
-          <div className="glass-card p-3 lg:p-4 mobile-card">
-            <div className="flex items-center gap-2 mobile-compact">
-              <div className="w-6 h-6 lg:w-8 lg:h-8 bg-slate-100 dark:bg-slate-700 rounded-md flex items-center justify-center">
-                <TrendingUp className="w-3 h-3 lg:w-4 lg:h-4 text-slate-600 dark:text-slate-400" />
+          <div className="music-card p-6 group hover:scale-105 transition-all duration-300">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-music-gold/20 to-music-accent/20 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-music-gold" />
               </div>
               <div>
-                <p className="text-xs lg:text-sm font-medium text-slate-600 dark:text-slate-400">Cette semaine</p>
-                <p className="text-lg lg:text-xl font-bold text-slate-900 dark:text-white">{recentNotes.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Cette semaine</p>
+                <p className="text-2xl font-bold text-foreground">{recentNotes.length}</p>
               </div>
             </div>
           </div>
         </div>
         
         {/* Barre de recherche et filtres */}
-        <div className="glass-card p-3 lg:p-4 mobile-card">
-          <div className="flex flex-col sm:flex-row gap-3 mobile-compact">
+        <div className="music-card p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3 h-3 lg:w-4 lg:h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Rechercher dans vos notes..."
                 value={searchTerm}
                 onChange={handleSearch}
-                className="pl-8 lg:pl-10 modern-input text-xs lg:text-sm"
+                className="pl-10 modern-input"
               />
             </div>
             
-            <div className="flex items-center gap-2 mobile-compact">
+            <div className="flex items-center gap-3">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-xs lg:text-sm px-2 lg:px-3">
-                    <Filter className="w-3 h-3 lg:w-4 lg:h-4 mr-1" />
+                  <Button variant="outline" size="sm" className="modern-button-secondary">
+                    <Filter className="w-4 h-4 mr-2" />
                     Filtrer
                   </Button>
                 </DropdownMenuTrigger>
@@ -253,30 +251,30 @@ const Notes = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <div className="flex bg-slate-100 dark:bg-slate-800 rounded-md p-1">
+              <div className="flex bg-secondary/50 rounded-xl p-1 border border-border/30">
                 <Button
                   variant={viewMode === 'masonry' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('masonry')}
-                  className="px-1.5 lg:px-2 h-6 lg:h-7"
+                  className="h-8 px-3"
                 >
-                  <StickyNote className="w-3 h-3 lg:w-4 lg:h-4" />
+                  <StickyNote className="w-4 h-4" />
                 </Button>
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className="px-1.5 lg:px-2 h-6 lg:h-7"
+                  className="h-8 px-3"
                 >
-                  <Grid3X3 className="w-3 h-3 lg:w-4 lg:h-4" />
+                  <Grid3X3 className="w-4 h-4" />
                 </Button>
                 <Button
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className="px-1.5 lg:px-2 h-6 lg:h-7"
+                  className="h-8 px-3"
                 >
-                  <List className="w-3 h-3 lg:w-4 lg:h-4" />
+                  <List className="w-4 h-4" />
                 </Button>
               </div>
             </div>
@@ -285,29 +283,27 @@ const Notes = () => {
         
         {/* Contenu principal */}
         {loading ? (
-          <div className="glass-card py-8 lg:py-12 mobile-card">
+          <div className="music-card py-12">
             <div className="flex flex-col items-center justify-center">
-              <Loader2 className="w-5 h-5 lg:w-6 lg:h-6 animate-spin text-blue-600 mb-3" />
-              <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400">Chargement de vos notes...</p>
+              <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
+              <p className="text-sm text-muted-foreground">Chargement de vos notes...</p>
             </div>
           </div>
         ) : filteredNotes.length === 0 ? (
-          <div className="glass-card py-8 lg:py-12 mobile-card">
+          <div className="music-card py-12">
             <div className="text-center">
-              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center mx-auto mb-3 lg:mb-4">
-                <StickyNote className="w-5 h-5 lg:w-6 lg:h-6 text-slate-400" />
-              </div>
-              <h3 className="text-base lg:text-lg font-semibold text-slate-900 dark:text-white mb-2 mobile-title">
+              <div className="vinyl-effect w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-muted to-secondary"></div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 {searchTerm.trim() !== '' ? 'Aucun résultat trouvé' : 'Aucune note pour le moment'}
               </h3>
-              <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-400 mb-4 max-w-md mx-auto mobile-subtitle">
+              <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
                 {searchTerm.trim() !== '' 
                   ? 'Essayez avec des termes différents ou créez une nouvelle note.'
                   : 'Commencez par créer votre première note pour organiser vos idées musicales.'}
               </p>
               {searchTerm.trim() === '' && (
-                <Button onClick={handleNewNote} className="modern-button mobile-button">
-                  <Plus className="w-3 h-3 lg:w-4 lg:h-4 mr-1 lg:mr-2" />
+                <Button onClick={handleNewNote} className="modern-button">
+                  <Plus className="w-4 h-4 mr-2" />
                   Créer ma première note
                 </Button>
               )}

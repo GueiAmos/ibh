@@ -14,9 +14,9 @@ import {
 export function ThemeToggle() {
   const [theme, setTheme] = useState(() => {
     if (typeof window !== "undefined") {
-      return localStorage.theme || "light";
+      return localStorage.theme || "dark";
     }
-    return "light";
+    return "dark";
   });
   
   useEffect(() => {
@@ -34,17 +34,19 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10">
+          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           <span className="sr-only">Toggle theme</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
+      <DropdownMenuContent align="end" className="music-card border-border/50">
+        <DropdownMenuItem onClick={() => setTheme("light")} className="hover:bg-primary/10">
+          <Sun className="mr-2 h-4 w-4" />
           Light
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
+        <DropdownMenuItem onClick={() => setTheme("dark")} className="hover:bg-primary/10">
+          <Moon className="mr-2 h-4 w-4" />
           Dark
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -52,5 +54,4 @@ export function ThemeToggle() {
   );
 }
 
-// Export both as default and named export for compatibility
 export default ThemeToggle;
