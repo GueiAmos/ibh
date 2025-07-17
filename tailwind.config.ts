@@ -64,12 +64,14 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				music: {
-					dark: 'hsl(var(--music-dark))',
-					purple: 'hsl(var(--music-purple))',
-					blue: 'hsl(var(--music-blue))',
-					gold: 'hsl(var(--music-gold))',
-					silver: 'hsl(var(--music-silver))',
-					accent: 'hsl(var(--music-accent))'
+					midnight: 'hsl(var(--music-midnight))',
+					'deep-purple': 'hsl(var(--music-deep-purple))',
+					'royal-blue': 'hsl(var(--music-royal-blue))',
+					emerald: 'hsl(var(--music-emerald))',
+					platinum: 'hsl(var(--music-platinum))',
+					copper: 'hsl(var(--music-copper))',
+					crimson: 'hsl(var(--music-crimson))',
+					indigo: 'hsl(var(--music-indigo))'
 				}
 			},
 			borderRadius: {
@@ -126,6 +128,17 @@ export default {
 						transform: 'scale(1.05)',
 						boxShadow: '0 0 0 10px hsl(var(--primary) / 0)'
 					}
+				},
+				'gradient-shift': {
+					'0%': {
+						backgroundPosition: '0% 50%'
+					},
+					'50%': {
+						backgroundPosition: '100% 50%'
+					},
+					'100%': {
+						backgroundPosition: '0% 50%'
+					}
 				}
 			},
 			animation: {
@@ -134,15 +147,19 @@ export default {
 				'fade-in': 'fadeIn 0.3s ease-in-out',
 				'slide-in': 'slideIn 0.3s ease-in-out',
 				'vinyl-spin': 'vinyl-spin 20s linear infinite',
-				'beat-pulse': 'beat-pulse 2s ease-in-out infinite'
+				'beat-pulse': 'beat-pulse 2s ease-in-out infinite',
+				'gradient-shift': 'gradient-shift 3s ease-in-out infinite'
 			},
 			fontFamily: {
 				sans: ['Inter', 'sans-serif'],
 				heading: ['Poppins', 'sans-serif'],
 			},
 			backgroundImage: {
-				'music-gradient': 'linear-gradient(135deg, hsl(var(--music-purple)), hsl(var(--music-blue)), hsl(var(--music-purple)))',
-				'dark-gradient': 'linear-gradient(135deg, hsl(var(--music-dark)), hsl(var(--background)))',
+				'music-gradient': 'linear-gradient(135deg, hsl(139 92 246), hsl(99 102 241), hsl(79 70 229))',
+				'dark-gradient': 'linear-gradient(135deg, hsl(10 9 18), hsl(var(--background)))',
+				'royal-gradient': 'linear-gradient(135deg, hsl(37 99 235), hsl(79 70 229))',
+				'emerald-gradient': 'linear-gradient(135deg, hsl(16 185 129), hsl(99 102 241))',
+				'crimson-gradient': 'linear-gradient(135deg, hsl(220 38 127), hsl(139 92 246))',
 			}
 		}
 	},

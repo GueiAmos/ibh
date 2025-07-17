@@ -5,50 +5,52 @@
 
 @layer base {
   :root {
-    --background: 8 7 16;
+    --background: 10 9 18;
     --foreground: 248 248 252;
 
-    --card: 16 13 26;
+    --card: 16 15 26;
     --card-foreground: 248 248 252;
 
-    --popover: 16 13 26;
+    --popover: 16 15 26;
     --popover-foreground: 248 248 252;
 
-    --primary: 168 85 247;
-    --primary-foreground: 8 7 16;
+    --primary: 139 92 246;
+    --primary-foreground: 248 248 252;
 
-    --secondary: 24 20 33;
+    --secondary: 28 25 40;
     --secondary-foreground: 203 213 225;
 
-    --muted: 24 20 33;
+    --muted: 28 25 40;
     --muted-foreground: 148 163 184;
 
-    --accent: 79 70 229;
+    --accent: 99 102 241;
     --accent-foreground: 248 248 252;
 
-    --destructive: 248 113 113;
-    --destructive-foreground: 8 7 16;
+    --destructive: 239 68 68;
+    --destructive-foreground: 248 248 252;
 
-    --border: 41 37 56;
-    --input: 41 37 56;
-    --ring: 168 85 247;
+    --border: 45 41 60;
+    --input: 45 41 60;
+    --ring: 139 92 246;
 
-    --sidebar-background: 12 10 23;
+    --sidebar-background: 12 10 22;
     --sidebar-foreground: 248 248 252;
-    --sidebar-primary: 168 85 247;
-    --sidebar-primary-foreground: 8 7 16;
-    --sidebar-accent: 24 20 33;
+    --sidebar-primary: 139 92 246;
+    --sidebar-primary-foreground: 248 248 252;
+    --sidebar-accent: 28 25 40;
     --sidebar-accent-foreground: 248 248 252;
-    --sidebar-border: 41 37 56;
-    --sidebar-ring: 168 85 247;
+    --sidebar-border: 45 41 60;
+    --sidebar-ring: 139 92 246;
 
-    /* Couleurs musicales personnalisées */
-    --music-dark: 8 7 16;
-    --music-purple: 88 28 135;
-    --music-blue: 30 58 138;
-    --music-gold: 217 119 6;
-    --music-silver: 148 163 184;
-    --music-accent: 139 69 19;
+    /* Couleurs musicales artistiques */
+    --music-midnight: 10 9 18;
+    --music-deep-purple: 79 70 229;
+    --music-royal-blue: 37 99 235;
+    --music-emerald: 16 185 129;
+    --music-platinum: 156 163 175;
+    --music-copper: 120 113 108;
+    --music-crimson: 220 38 127;
+    --music-indigo: 99 102 241;
   }
 }
 
@@ -63,7 +65,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background: linear-gradient(135deg, hsl(8 7 16), hsl(var(--background)));
+    background: linear-gradient(135deg, hsl(10 9 18), hsl(var(--background)));
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -81,7 +83,7 @@
   
   .note-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 40px -10px hsl(88 28 135 / 0.3);
+    box-shadow: 0 20px 40px -10px hsl(139 92 246 / 0.3);
   }
   
   .glass-card {
@@ -212,12 +214,12 @@
     margin-bottom: 1.5rem;
   }
 
-  /* Couleurs musicales */
+  /* Couleurs musicales artistiques */
   .music-gradient {
     background: linear-gradient(135deg, 
-      hsl(88 28 135), 
-      hsl(30 58 138), 
-      hsl(88 28 135));
+      hsl(139 92 246), 
+      hsl(99 102 241), 
+      hsl(79 70 229));
   }
   
   .music-card {
@@ -233,9 +235,9 @@
     right: 0;
     bottom: 0;
     background: linear-gradient(45deg, 
-      hsl(88 28 135 / 0.1), 
+      hsl(139 92 246 / 0.1), 
       transparent, 
-      hsl(30 58 138 / 0.1));
+      hsl(99 102 241 / 0.1));
     pointer-events: none;
   }
   
@@ -293,9 +295,9 @@
     height: 100%;
     background: conic-gradient(
       from 0deg,
-      hsl(88 28 135 / 0.1),
-      hsl(30 58 138 / 0.1),
-      hsl(88 28 135 / 0.1)
+      hsl(139 92 246 / 0.1),
+      hsl(99 102 241 / 0.1),
+      hsl(139 92 246 / 0.1)
     );
     transform: translate(-50%, -50%);
     animation: vinyl-spin 20s linear infinite;
@@ -320,6 +322,23 @@
       transform: scale(1.05);
       box-shadow: 0 0 0 10px hsl(var(--primary) / 0);
     }
+  }
+
+  /* Nouvelles classes utilitaires musicales */
+  .emerald-accent {
+    @apply text-emerald-400 bg-emerald-400/10 border-emerald-400/20;
+  }
+  
+  .royal-accent {
+    @apply text-blue-500 bg-blue-500/10 border-blue-500/20;
+  }
+  
+  .crimson-accent {
+    @apply text-pink-500 bg-pink-500/10 border-pink-500/20;
+  }
+  
+  .platinum-accent {
+    @apply text-gray-400 bg-gray-400/10 border-gray-400/20;
   }
 }
 
